@@ -18,6 +18,8 @@ import {
     OutlinedInput,
     Chip,
 } from '@mui/material';
+import { useNavigate } from 'react-router-dom';
+import { useClinicRequest } from '../contexts/ClinicRequestContext';
 
 const clinicsExample = [
     { id: '1', name: 'Clinic 1' },

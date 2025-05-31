@@ -19,7 +19,7 @@ import {
 } from '@mui/material';
 import { Edit, Delete } from '@mui/icons-material';
 import { useNavigate } from 'react-router-dom';
-import { useClinicRequest } from '../context/ClinicRequestContext'; // Assure-toi du bon chemin
+import { useClinicRequest } from '../contexts/ClinicRequestContext'; // Assure-toi du bon chemin
 
 export default function ClinicRequests() {
     const [requests, setRequests] = useState([]);
@@ -83,11 +83,11 @@ export default function ClinicRequests() {
                                     {requests.map((item) => (
                                         <TableRow key={item.id}>
                                             <TableCell>{item.id}</TableCell>
-                                            <TableCell>{item.patientName}</TableCell>
-                                            <TableCell>{item.nationalityId}</TableCell>
-                                            <TableCell>{item.client}</TableCell>
+                                            <TableCell>{item.Patient?.full_name}</TableCell>
+                                            <TableCell>{item.Patient?.nationality_id}</TableCell>
+                                            <TableCell>{item.User?.first_name}</TableCell>
                                             <TableCell>{item.provider}</TableCell>
-                                            <TableCell>{item.status}</TableCell>
+                                            <TableCell>{item.status || 'pending'}</TableCell>
                                             <TableCell>
                                                 <IconButton
                                                     color="info"

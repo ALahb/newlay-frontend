@@ -1,7 +1,7 @@
 import React, { useEffect, useState } from 'react';
 import { useParams, useNavigate } from 'react-router-dom';
 import EditRequest from '../components/EditRequest';
-import { useClinicRequest } from '../context/ClinicRequestContext';
+import { useClinicRequest } from '../contexts/ClinicRequestContext';
 
 export default function EditRequestPage() {
     const { id } = useParams();
