@@ -1,4 +1,4 @@
-import React from 'react';
+import React, { useEffect, useState } from 'react';
 import {
     Card,
     CardContent,
@@ -17,17 +17,38 @@ import {
     Paper,
     Typography,
 } from '@mui/material';
-
 import { Edit, Delete } from '@mui/icons-material';
 import { useNavigate } from 'react-router-dom';
+import { useClinicRequest } from '../context/ClinicRequestContext'; // Assure-toi du bon chemin
 
-export default function ClinicRequests({ requests, setRequests }) {
-    const [deleteId, setDeleteId] = React.useState(null);
+export default function ClinicRequests() {
+    const [requests, setRequests] = useState([]);
+    const [deleteId, setDeleteId] = useState(null);
     const navigate = useNavigate();
+    const { getAllRequests, deleteRequest } = useClinicRequest();
 
-    const handleDelete = () => {
-        setRequests(requests.filter((req) => req.id !== deleteId));
-        setDeleteId(null);
+    useEffect(() => {
+        const fetchData = async () => {
+            try {
+                const data = await getAllRequests();
+                setRequests(data);
+            } catch (err) {
+                console.error('Erreur lors de la récupération des requêtes', err);
+            }
+        };
+
+        fetchData();
+    }, [getAllRequests]);
+
+    const handleDelete = async () => {
+        try {
+            await deleteRequest(deleteId);
+            setRequests((prev) => prev.filter((req) => req.id !== deleteId));
+            setDeleteId(null);
+        } catch (error) {
+            console.error("Erreur lors de la suppression :", error);
+            // Tu peux afficher une notification d'erreur ici
+        }
     };
 
     return (
@@ -68,7 +89,9 @@ export default function ClinicRequests({ requests, setRequests }) {
                                             <TableCell>{item.provider}</TableCell>
                                             <TableCell>{item.status}</TableCell>
                                             <TableCell>
-                                                <IconButton color="info" onClick={() => navigate(`/clinicrequests/edit/${item.id}`)}
+                                                <IconButton
+                                                    color="info"
+                                                    onClick={() => navigate(`/clinicrequests/edit/${item.id}`)}
                                                 >
                                                     <Edit />
                                                 </IconButton>
@@ -85,7 +108,6 @@ export default function ClinicRequests({ requests, setRequests }) {
                 </CardContent>
             </Card>
 
-            {/* Delete Confirmation Dialog */}
             <Dialog open={deleteId !== null} onClose={() => setDeleteId(null)}>
                 <DialogTitle>Are you sure you want to delete this request?</DialogTitle>
                 <DialogActions>

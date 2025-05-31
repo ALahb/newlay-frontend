@@ -1,0 +1,68 @@
+import React, { createContext, useContext } from 'react';
+import api from '../api/api';
+
+const ClinicRequestContext = createContext();
+
+export const ClinicRequestProvider = ({ children }) => {
+
+    // Méthode GET pour toutes les requêtes
+    const getAllRequests = async () => {
+        try {
+            const res = await api.get('/clinic-requests');
+            return res.data;
+        } catch (error) {
+            console.error("Erreur lors de la récupération des requêtes :", error);
+            throw error;
+        }
+    };
+    // Méthode GET pour une seule requête
+    const getRequestById = async (id) => {
+        try {
+            const res = await api.get(`/clinic-requests/${id}`);
+            return res.data;
+        } catch (error) {
+            console.error("Erreur lors de la récupération de la requête :", error);
+            throw error;
+        }
+    };
+
+    // Méthode POST (ex: création)
+    const createRequest = async (data) => {
+        try {
+            const res = await api.post('/clinic-requests', data);
+            return res.data;
+        } catch (error) {
+            console.error("Erreur lors de la création :", error);
+            throw error;
+        }
+    };
+
+    // Méthode PUT (ex: mise à jour)
+    const updateRequest = async (id, data) => {
+        try {
+            const res = await api.put(`/clinic-requests/${id}`, data);
+            return res.data;
+        } catch (error) {
+            console.error("Erreur lors de la mise à jour :", error);
+            throw error;
+        }
+    };
+
+    const deleteRequest = async (id) => {
+        try {
+            await api.delete(`/clinic-requests/${id}`);
+        } catch (error) {
+            console.error("Erreur lors de la suppression :", error);
+            throw error;
+        }
+    };
+
+    return (
+        <ClinicRequestContext.Provider value={{ getRequestById, createRequest, updateRequest, getAllRequests, deleteRequest }}>
+            {children}
+        </ClinicRequestContext.Provider>
+    );
+};
+
+// Hook personnalisé
+export const useClinicRequest = () => useContext(ClinicRequestContext);

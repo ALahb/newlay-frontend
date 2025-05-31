@@ -27,6 +27,9 @@ const requestTypes = ['Radio', 'IRM', 'Eco', 'N/A'];
 const hospitals = ['Clinic Zayatine', 'Clinic Pasteur', 'Bilateral', 'N/A'];
 
 export default function AddRequestForm() {
+
+    const navigate = useNavigate();
+    const { createRequest } = useClinicRequest();
     // États
     const [nationalityId, setNationalityId] = useState('');
     const [clinic, setClinic] = useState('');
@@ -50,29 +53,34 @@ export default function AddRequestForm() {
         setFile(e.target.files[0]);
     };
 
-    const handleSubmit = (e) => {
+    const handleSubmit = async (e) => {
         e.preventDefault();
-        // TODO: envoyer les données au backend
-        const formData = {
-            nationalityId,
-            clinic,
-            requestType,
-            hospital,
-            phone,
-            emergency,
-            ivContrast,
-            previousOperation,
-            previousOperationNote,
-            receivedMedication,
-            receivedMedicationNote,
-            referralDoctor,
-            oldStudy,
-            complaint,
-            file,
-            price,
-            paymentType,
-        };
-        console.log(formData);
+
+        const formData = new FormData();
+        formData.append('nationalityId', nationalityId);
+        formData.append('clinic', clinic);
+        formData.append('requestType', JSON.stringify(requestType));
+        formData.append('hospital', hospital);
+        formData.append('phone', phone);
+        formData.append('emergency', emergency);
+        formData.append('ivContrast', ivContrast);
+        formData.append('previousOperation', previousOperation);
+        formData.append('previousOperationNote', previousOperationNote);
+        formData.append('receivedMedication', receivedMedication);
+        formData.append('receivedMedicationNote', receivedMedicationNote);
+        formData.append('referralDoctor', referralDoctor);
+        formData.append('oldStudy', oldStudy);
+        formData.append('complaint', complaint);
+        if (file) formData.append('file', file);
+        formData.append('price', price);
+        formData.append('paymentType', paymentType);
+
+        try {
+            await createRequest(formData);
+            navigate('/');
+        } catch (error) {
+            console.error('Erreur lors de la création de la requête', error);
+        }
     };
 
     return (
