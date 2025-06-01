@@ -3,8 +3,9 @@ import { Container, Typography } from '@mui/material';
 import { BrowserRouter as Router, Routes, Route } from 'react-router-dom';
 import ClinicRequests from './pages/ClinicRequests';
 import AddRequestPage from './pages/AddRequestPage';
-import EditRequestPage from './pages/EditRequestPage';
+import EditRequestPage from './pages/PreviewRequestPage';
 import { ClinicRequestProvider } from './contexts/ClinicRequestContext';
+import PaymentPage from './pages/PaymentPage';
 
 function App() {
   return (
@@ -18,6 +19,7 @@ function App() {
             <Route path="/" element={<ClinicRequests />} />
             <Route path="/clinicrequests/add" element={<AddRequestPage />} />
             <Route path="/clinicrequests/edit/:id" element={<EditRequestPage />} />
+            <Route path="/clinicrequests/payment/:id" element={<PaymentPage />} />
           </Routes>
         </Container>
       </Router>

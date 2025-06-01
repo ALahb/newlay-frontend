@@ -57,8 +57,28 @@ export const ClinicRequestProvider = ({ children }) => {
         }
     };
 
+    const checkPatientByNationality = async (nationalityId) => {
+        try {
+            const res = await api.get(`/patients/check/${nationalityId}`);
+            return res.data;
+        } catch (error) {
+            console.error("Erreur lors de la vérification du patient :", error);
+            throw error;
+        }
+    };
+
+    const processPayment = async (id, paymentData) => {
+        try {
+            const res = await api.put(`/clinic-requests/${id}/payment`, paymentData);
+            return res.data;
+        } catch (error) {
+            console.error("Erreur lors du paiement :", error);
+            throw error;
+        }
+    };
+
     return (
-        <ClinicRequestContext.Provider value={{ getRequestById, createRequest, updateRequest, getAllRequests, deleteRequest }}>
+        <ClinicRequestContext.Provider value={{ getRequestById, createRequest, updateRequest, getAllRequests, deleteRequest, checkPatientByNationality, processPayment }}>
             {children}
         </ClinicRequestContext.Provider>
     );

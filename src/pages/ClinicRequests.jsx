@@ -16,8 +16,9 @@ import {
     DialogActions,
     Paper,
     Typography,
+    Tooltip,
 } from '@mui/material';
-import { Edit, Delete } from '@mui/icons-material';
+import { Visibility, Delete, AttachMoneyOutlined, HourglassEmpty, Cancel, MedicalServices } from '@mui/icons-material';
 import { useNavigate } from 'react-router-dom';
 import { useClinicRequest } from '../contexts/ClinicRequestContext'; // Assure-toi du bon chemin
 
@@ -51,6 +52,37 @@ export default function ClinicRequests() {
         }
     };
 
+    const renderStatusIcon = (status) => {
+        switch (status?.toLowerCase()) {
+            case 'pending':
+                return (
+                    <Tooltip title="Pending">
+                        <HourglassEmpty color="warning" />
+                    </Tooltip>
+                );
+            case 'rejected':
+                return (
+                    <Tooltip title="Rejected">
+                        <Cancel color="error" />
+                    </Tooltip>
+                );
+            case 'waiting_for_payment':
+                return (
+                    <Tooltip title="Waiting for Payment">
+                        <AttachMoneyOutlined color="secondary" />
+                    </Tooltip>
+                );
+            case 'ready_for_examination':
+                return (
+                    <Tooltip title="Ready for Examination">
+                        <MedicalServices color="success" />
+                    </Tooltip>
+                );
+            default:
+                return <Typography>{status}</Typography>; // fallback: display text
+        }
+    };
+
     return (
         <>
             <Card>
@@ -73,8 +105,8 @@ export default function ClinicRequests() {
                                         <TableCell>#</TableCell>
                                         <TableCell>Patient Name</TableCell>
                                         <TableCell>Nationality ID</TableCell>
-                                        <TableCell>Client</TableCell>
-                                        <TableCell>Provider</TableCell>
+                                        <TableCell>Receiver Clinic</TableCell>
+                                        <TableCell>Provider Clinic</TableCell>
                                         <TableCell>Status</TableCell>
                                         <TableCell>Actions</TableCell>
                                     </TableRow>
@@ -85,16 +117,26 @@ export default function ClinicRequests() {
                                             <TableCell>{item.id}</TableCell>
                                             <TableCell>{item.Patient?.full_name}</TableCell>
                                             <TableCell>{item.Patient?.nationality_id}</TableCell>
-                                            <TableCell>{item.User?.first_name}</TableCell>
-                                            <TableCell>{item.provider}</TableCell>
-                                            <TableCell>{item.status || 'pending'}</TableCell>
+                                            <TableCell>{item?.receiverClinic?.name}</TableCell>
+                                            <TableCell>{item?.providerClinic?.name}</TableCell>
+                                            <TableCell>{renderStatusIcon(item.status)}</TableCell>
                                             <TableCell>
                                                 <IconButton
                                                     color="info"
                                                     onClick={() => navigate(`/clinicrequests/edit/${item.id}`)}
                                                 >
-                                                    <Edit />
+                                                    <Visibility />
                                                 </IconButton>
+                                                {item.status === 'waiting_for_payment' && (
+                                                    <Tooltip title="Proceed to Payment">
+                                                        <IconButton
+                                                            color="success"
+                                                            onClick={() => navigate(`/clinicrequests/payment/${item.id}`)}
+                                                        >
+                                                            <AttachMoneyOutlined />
+                                                        </IconButton>
+                                                    </Tooltip>
+                                                )}
                                                 <IconButton color="error" onClick={() => setDeleteId(item.id)}>
                                                     <Delete />
                                                 </IconButton>

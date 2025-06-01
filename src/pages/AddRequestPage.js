@@ -17,6 +17,7 @@ import {
     InputLabel,
     OutlinedInput,
     Chip,
+    Typography,
 } from '@mui/material';
 import { useNavigate } from 'react-router-dom';
 import { useClinicRequest } from '../contexts/ClinicRequestContext';
@@ -31,9 +32,12 @@ const hospitals = ['Clinic Zayatine', 'Clinic Pasteur', 'Bilateral', 'N/A'];
 export default function AddRequestForm() {
 
     const navigate = useNavigate();
-    const { createRequest } = useClinicRequest();
+    const { createRequest, checkPatientByNationality } = useClinicRequest();
     // États
+    const [status, setStatus] = useState('');
     const [nationalityId, setNationalityId] = useState('');
+    const [fullName, setFullName] = useState('');
+    const [nationalityIdInRequest, setNationalityIdInRequest] = useState('');
     const [clinic, setClinic] = useState('');
     const [requestType, setRequestType] = useState([]);
     const [hospital, setHospital] = useState('');
@@ -48,8 +52,10 @@ export default function AddRequestForm() {
     const [oldStudy, setOldStudy] = useState('yes');
     const [complaint, setComplaint] = useState('');
     const [file, setFile] = useState(null);
-    const [price, setPrice] = useState('');
-    const [paymentType, setPaymentType] = useState('cash');
+    // Supprimé : const [price, setPrice] = useState('');
+    // Supprimé : const [paymentType, setPaymentType] = useState('cash');
+    const [result, setResult] = useState(null);
+    const [error, setError] = useState('');
 
     const handleFileChange = (e) => {
         setFile(e.target.files[0]);
@@ -59,29 +65,49 @@ export default function AddRequestForm() {
         e.preventDefault();
 
         const formData = new FormData();
-        formData.append('nationalityId', nationalityId);
-        formData.append('clinic', clinic);
-        formData.append('requestType', JSON.stringify(requestType));
-        formData.append('hospital', hospital);
+        formData.append('nationality_id', nationalityIdInRequest);
+        formData.append('clinic_id', clinic);
+        formData.append('request_types', JSON.stringify(requestType));
+        formData.append('full_name', fullName);
         formData.append('phone', phone);
-        formData.append('emergency', emergency);
-        formData.append('ivContrast', ivContrast);
-        formData.append('previousOperation', previousOperation);
-        formData.append('previousOperationNote', previousOperationNote);
-        formData.append('receivedMedication', receivedMedication);
-        formData.append('receivedMedicationNote', receivedMedicationNote);
-        formData.append('referralDoctor', referralDoctor);
-        formData.append('oldStudy', oldStudy);
-        formData.append('complaint', complaint);
-        if (file) formData.append('file', file);
-        formData.append('price', price);
-        formData.append('paymentType', paymentType);
-
+        formData.append('is_emergency', emergency === 'yes');
+        formData.append('with_iv_contrast', ivContrast === 'yes');
+        formData.append('has_previous_operations', previousOperation === 'yes');
+        formData.append('previous_operations_details', previousOperationNote);
+        formData.append('received_medications', receivedMedication === 'yes');
+        formData.append('medications_details', receivedMedicationNote);
+        formData.append('referral_doctor', referralDoctor);
+        formData.append('has_old_study', oldStudy === 'yes');
+        formData.append('complaint_history', complaint);
+        if (file) formData.append('attachment_path', file);
+        // Supprimé : formData.append('price', price);
+        // Supprimé : formData.append('payment_type', paymentType);
         try {
             await createRequest(formData);
             navigate('/');
         } catch (error) {
             console.error('Erreur lors de la création de la requête', error);
+        }
+    };
+
+    const checkPatient = async () => {
+        setError('');
+        setResult(null);
+
+        if (!nationalityId || !clinic) {
+            setError('Tous les champs sont requis.');
+            return;
+        }
+
+        try {
+            const response = await checkPatientByNationality(nationalityId);
+            setResult(response);
+            if (response) {
+                setFullName(response.full_name || '');
+                setNationalityIdInRequest(response.nationality_id || '');
+            }
+        } catch (err) {
+            setError("Erreur lors de la vérification du patient.");
         }
     };
 
@@ -120,9 +146,28 @@ export default function AddRequestForm() {
                             ))}
                         </Select>
                     </FormControl>
-                    <Button variant="contained" color="success" type="submit">
+                    <Button
+                        variant="contained"
+                        color="success"
+                        onClick={checkPatient}
+                        disabled={!nationalityId || !clinic}
+                    >
                         Check Patient
                     </Button>
+
+                    {error && (
+                        <Typography color="error" sx={{ mt: 2 }}>
+                            {error}
+                        </Typography>
+                    )}
+
+                    {result && (
+                        <Card sx={{ mt: 2, p: 2, backgroundColor: '#f5f5f5' }}>
+                            <Typography><strong>Full Name :</strong> {result.full_name}</Typography>
+                            <Typography><strong>Nationality ID :</strong> {result.nationality_id}</Typography>
+                            <Typography><strong>Doctor :</strong> {result.referral_doctor}</Typography>
+                        </Card>
+                    )}
                 </CardContent>
             </Card>
 
@@ -153,6 +198,23 @@ export default function AddRequestForm() {
                             ))}
                         </Select>
                     </FormControl>
+
+                    <TextField
+                        label="Full Name"
+                        fullWidth
+                        sx={{ mb: 3 }}
+                        value={fullName}
+                        onChange={(e) => setFullName(e.target.value)}
+                    />
+
+                    <TextField
+                        label="Nationality ID"
+                        type="number"
+                        fullWidth
+                        sx={{ mb: 3 }}
+                        value={nationalityIdInRequest}
+                        onChange={(e) => setNationalityIdInRequest(e.target.value)}
+                    />
 
                     <FormControl fullWidth sx={{ mb: 3 }}>
                         <InputLabel id="hospital-label">Hospital</InputLabel>
@@ -299,34 +361,6 @@ export default function AddRequestForm() {
                         <input type="file" hidden onChange={handleFileChange} />
                     </Button>
                     {file && <Box>Fichier sélectionné: {file.name}</Box>}
-                </CardContent>
-            </Card>
-
-            {/* Price & Payment */}
-            <Card sx={{ mb: 3 }}>
-                <CardHeader title="Price & Payment" />
-                <CardContent>
-                    <TextField
-                        label="Price"
-                        fullWidth
-                        sx={{ mb: 3 }}
-                        value={price}
-                        onChange={(e) => setPrice(e.target.value)}
-                    />
-
-                    <FormControl component="fieldset" sx={{ mb: 3 }}>
-                        <FormLabel component="legend">Payment Type</FormLabel>
-                        <RadioGroup
-                            row
-                            value={paymentType}
-                            onChange={(e) => setPaymentType(e.target.value)}
-                            name="payment-type-radio"
-                        >
-                            <FormControlLabel value="cash" control={<Radio />} label="Cash" />
-                            <FormControlLabel value="online" control={<Radio />} label="Online" />
-                            <FormControlLabel value="credit" control={<Radio />} label="Credit" />
-                        </RadioGroup>
-                    </FormControl>
                 </CardContent>
             </Card>
 
