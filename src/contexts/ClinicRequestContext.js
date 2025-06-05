@@ -76,9 +76,22 @@ export const ClinicRequestProvider = ({ children }) => {
             throw error;
         }
     };
+    const uploadPDF = async (formData) => {
+        try {
+            const res = await api.post(`/uploads`, formData, {
+                headers: {
+                    'Content-Type': 'multipart/form-data',
+                },
+            });
+            return res.data; // assume it returns the file URL or path
+        } catch (error) {
+            console.error("Erreur lors de l'upload du PDF :", error);
+            throw error;
+        }
+    };
 
     return (
-        <ClinicRequestContext.Provider value={{ getRequestById, createRequest, updateRequest, getAllRequests, deleteRequest, checkPatientByNationality, processPayment }}>
+        <ClinicRequestContext.Provider value={{ getRequestById, createRequest, updateRequest, getAllRequests, deleteRequest, checkPatientByNationality, processPayment, uploadPDF }}>
             {children}
         </ClinicRequestContext.Provider>
     );

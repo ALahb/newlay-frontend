@@ -18,7 +18,7 @@ import {
     Typography,
     Tooltip,
 } from '@mui/material';
-import { Visibility, Delete, AttachMoneyOutlined, HourglassEmpty, Cancel, MedicalServices } from '@mui/icons-material';
+import { Visibility, Delete, AttachMoneyOutlined, HourglassEmpty, Cancel, MedicalServices, CheckCircle, PictureAsPdf } from '@mui/icons-material';
 import { useNavigate } from 'react-router-dom';
 import { useClinicRequest } from '../contexts/ClinicRequestContext'; // Assure-toi du bon chemin
 
@@ -52,6 +52,24 @@ export default function ClinicRequests() {
         }
     };
 
+    const handleDownloadPDF = async (url) => {
+        console.log(url);
+
+        try {
+            const fullUrl = `http://localhost:5000${url}`;
+
+            const link = document.createElement("a");
+            link.href = fullUrl;
+            link.download = ""; // le nom du fichier sera pris depuis le serveur
+            document.body.appendChild(link);
+            link.click();
+            document.body.removeChild(link);
+        } catch (error) {
+            console.error("Erreur lors du téléchargement du PDF :", error);
+            // Optionnel : afficher une notification d'erreur à l'utilisateur
+        }
+    };
+
     const renderStatusIcon = (status) => {
         switch (status?.toLowerCase()) {
             case 'pending':
@@ -76,6 +94,12 @@ export default function ClinicRequests() {
                 return (
                     <Tooltip title="Ready for Examination">
                         <MedicalServices color="success" />
+                    </Tooltip>
+                );
+            case 'finished':
+                return (
+                    <Tooltip title="Finished">
+                        <CheckCircle color="primary" />
                     </Tooltip>
                 );
             default:
@@ -140,6 +164,16 @@ export default function ClinicRequests() {
                                                 <IconButton color="error" onClick={() => setDeleteId(item.id)}>
                                                     <Delete />
                                                 </IconButton>
+                                                {item.status === 'finished' && (
+                                                    <Tooltip title="Download PDF">
+                                                        <IconButton
+                                                            color="primary"
+                                                            onClick={() => handleDownloadPDF(item.report_file)}
+                                                        >
+                                                            <PictureAsPdf />
+                                                        </IconButton>
+                                                    </Tooltip>
+                                                )}
                                             </TableCell>
                                         </TableRow>
                                     ))}
