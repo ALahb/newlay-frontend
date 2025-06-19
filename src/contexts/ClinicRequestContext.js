@@ -6,15 +6,26 @@ const ClinicRequestContext = createContext();
 export const ClinicRequestProvider = ({ children }) => {
 
     // Méthode GET pour toutes les requêtes
-    const getAllRequests = async () => {
+    const getAllRequests = async (filters = {}) => {
         try {
-            const res = await api.get('/clinic-requests');
+            const params = new URLSearchParams();
+
+            if (filters.startDate) params.append('startDate', filters.startDate);
+            if (filters.endDate) params.append('endDate', filters.endDate);
+            if (filters.nationalityId) params.append('nationality_id', filters.nationalityId);
+            if (filters.patientName) params.append('patient_name', filters.patientName);
+            if (filters.clinic_receiver_name) params.append('clinic_receiver_name', filters.clinic_receiver_name);
+            if (filters.clinic_provider_name) params.append('clinic_provider_name', filters.clinic_provider_name);
+            if (filters.status) params.append('status', filters.status);
+
+            const res = await api.get(`/clinic-requests?${params.toString()}`);
             return res.data;
         } catch (error) {
             console.error("Erreur lors de la récupération des requêtes :", error);
             throw error;
         }
     };
+
     // Méthode GET pour une seule requête
     const getRequestById = async (id) => {
         try {
@@ -26,6 +37,15 @@ export const ClinicRequestProvider = ({ children }) => {
         }
     };
 
+    const getStats = async () => {
+        try {
+            const res = await api.get('/clinic-requests/stats');
+            return res.data;
+        } catch (error) {
+            console.error("Erreur lors de la récupération des statistiques :", error);
+            throw error;
+        }
+    };
     // Méthode POST (ex: création)
     const createRequest = async (data) => {
         try {
@@ -90,8 +110,18 @@ export const ClinicRequestProvider = ({ children }) => {
         }
     };
 
+    const sendOnlinePayment = async (id) => {
+        try {
+            const res = await api.post('/payment/send-payment', { clinicRequestId: id });
+            return res.data; // { invoiceUrl, invoiceId, etc. }
+        } catch (error) {
+            console.error("Erreur lors de l'envoi du paiement en ligne :", error);
+            throw error;
+        }
+    };
+
     return (
-        <ClinicRequestContext.Provider value={{ getRequestById, createRequest, updateRequest, getAllRequests, deleteRequest, checkPatientByNationality, processPayment, uploadPDF }}>
+        <ClinicRequestContext.Provider value={{ getRequestById, createRequest, updateRequest, getAllRequests, deleteRequest, checkPatientByNationality, processPayment, uploadPDF, sendOnlinePayment, getStats }}>
             {children}
         </ClinicRequestContext.Provider>
     );

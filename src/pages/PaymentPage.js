@@ -20,7 +20,8 @@ import { useClinicRequest } from '../contexts/ClinicRequestContext';
 export default function PaymentPage() {
     const navigate = useNavigate();
     const location = useLocation();
-    const { processPayment } = useClinicRequest();
+    const { processPayment, sendOnlinePayment } = useClinicRequest();
+
     const { id } = useParams();
 
     // Assume you passed requestId via location.state when navigating here
@@ -36,29 +37,35 @@ export default function PaymentPage() {
         setLoading(true);
 
         try {
-            if (!id) {
-                throw new Error('No request ID provided');
-            }
+            if (!id) throw new Error('No request ID provided');
 
-            // Call your processPayment function
+            // 1. Enregistrer le paiement avec type et price
             await processPayment(id, {
                 payment_type: paymentType,
                 price: Number(price),
             });
 
-            setSuccess(true);
-            setLoading(false);
+            if (paymentType === 'online') {
+                // 2. Ensuite, récupérer l'URL de facture MyFatoorah
+                const { invoiceUrl } = await sendOnlinePayment(id);
 
+                // 3. Redirection vers MyFatoorah
+                window.location.href = invoiceUrl;
+                return;
+            }
+
+            // Cas cash/credit uniquement
+            setSuccess(true);
             setTimeout(() => {
                 navigate('/');
             }, 1500);
-
-
         } catch (err) {
             setError(err.message || 'Payment failed');
+        } finally {
             setLoading(false);
         }
     };
+
 
     return (
         <>

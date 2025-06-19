@@ -17,16 +17,36 @@ import {
     Paper,
     Typography,
     Tooltip,
+    TextField,
+    MenuItem,
+    Box,
 } from '@mui/material';
 import { Visibility, Delete, AttachMoneyOutlined, HourglassEmpty, Cancel, MedicalServices, CheckCircle, PictureAsPdf } from '@mui/icons-material';
 import { useNavigate } from 'react-router-dom';
 import { useClinicRequest } from '../contexts/ClinicRequestContext'; // Assure-toi du bon chemin
+import debounce from 'lodash.debounce';
+import DashboardStats from '../components/DashboardStats';
 
 export default function ClinicRequests() {
     const [requests, setRequests] = useState([]);
     const [deleteId, setDeleteId] = useState(null);
+    const [filters, setFilters] = useState({
+        startDate: '',
+        endDate: '',
+        nationalityId: '',
+        providerClinic: '',
+        receiverClinic: '',
+        status: '',
+    });
+    const [stats, setStats] = useState({
+        total_requests: 0,
+        in_progress_requests: 0,
+        finished_requests: 0,
+        total_clinic_receivers: 0,
+        total_clinic_providers: 0,
+    });
     const navigate = useNavigate();
-    const { getAllRequests, deleteRequest } = useClinicRequest();
+    const { getAllRequests, deleteRequest, getStats } = useClinicRequest();
 
     useEffect(() => {
         const fetchData = async () => {
@@ -41,6 +61,19 @@ export default function ClinicRequests() {
         fetchData();
     }, [getAllRequests]);
 
+    useEffect(() => {
+        const fetchStats = async () => {
+            try {
+                const data = await getStats();
+                setStats(data);
+            } catch (error) {
+                console.error("Erreur chargement statistiques :", error);
+            }
+        };
+
+        fetchStats();
+    }, [getStats]);
+
     const handleDelete = async () => {
         try {
             await deleteRequest(deleteId);
@@ -53,8 +86,6 @@ export default function ClinicRequests() {
     };
 
     const handleDownloadPDF = async (url) => {
-        console.log(url);
-
         try {
             const fullUrl = `http://localhost:5000${url}`;
 
@@ -107,8 +138,108 @@ export default function ClinicRequests() {
         }
     };
 
+    useEffect(() => {
+        const debouncedFilter = debounce(async () => {
+            try {
+                const trimmedFilters = {
+                    startDate: filters.startDate,
+                    endDate: filters.endDate,
+                    nationalityId: filters.nationalityId.trim(),
+                    patientName: filters.patientName?.trim(),
+                    clinic_receiver_name: filters.receiverClinic.trim(),
+                    clinic_provider_name: filters.providerClinic.trim(),
+                    status: filters.status,
+                };
+
+                const data = await getAllRequests(trimmedFilters);
+                setRequests(data);
+            } catch (err) {
+                console.error("Erreur lors de la récupération filtrée :", err);
+            }
+        }, 500);
+
+        debouncedFilter();
+
+        return () => debouncedFilter.cancel();
+    }, [filters, getAllRequests]);
+
+    const statuses = [
+        { value: '', label: 'Status' },
+        { value: 'pending', label: 'Pending' },
+        { value: 'rejected', label: 'Rejected' },
+        { value: 'waiting_for_payment', label: 'Waiting for Payment' },
+        { value: 'ready_for_examination', label: 'Ready for Examination' },
+        { value: 'waiting_for_result', label: 'Waiting for Result' },
+        { value: 'finished', label: 'Finished' },
+    ];
+
+
     return (
         <>
+            <Box sx={{ display: 'flex', flexDirection: 'column', gap: 3, mb: 3 }}>
+
+                <DashboardStats
+                    totalRequests={stats.total_requests}
+                    totalRequestsProgress={stats.in_progress_requests}
+                    totalResults={stats.finished_requests}
+                    nbClients={stats.total_clinic_receivers}
+                    nbProviders={stats.total_clinic_providers}
+                />
+                <Box sx={{
+                    display: 'flex',
+                    // flexWrap: 'wrap',
+                    gap: 2,
+                    // mb: 2,
+                    justifyContent: 'space-between',
+                }}>
+                    <TextField
+                        label="Start Date"
+                        type="date"
+                        InputLabelProps={{ shrink: true }}
+                        value={filters.startDate}
+                        onChange={(e) => setFilters({ ...filters, startDate: e.target.value })}
+                    />
+                    <TextField
+                        label="End Date"
+                        type="date"
+                        InputLabelProps={{ shrink: true }}
+                        value={filters.endDate}
+                        onChange={(e) => setFilters({ ...filters, endDate: e.target.value })}
+                    />
+                    <TextField
+                        label="Nationality ID"
+                        value={filters.nationalityId}
+                        onChange={(e) => setFilters({ ...filters, nationalityId: e.target.value })}
+                    />
+                    <TextField
+                        label="Receiver Clinic"
+                        value={filters.receiverClinic}
+                        onChange={(e) => setFilters({ ...filters, receiverClinic: e.target.value })}
+                    />
+                    <TextField
+                        label="Provider Clinic"
+                        value={filters.providerClinic}
+                        onChange={(e) => setFilters({ ...filters, providerClinic: e.target.value })}
+                    />
+                    <TextField
+                        id="status-select"
+                        select
+                        label="Status"
+                        value={filters.status || ''}
+                        onChange={(e) => setFilters({ ...filters, status: e.target.value })}
+                        sx={{ minWidth: 200 }}
+                    >
+                        {statuses.map((option) => (
+                            <MenuItem key={option.value} value={option.value}>
+                                {option.label}
+                            </MenuItem>
+                        ))}
+                    </TextField>
+
+
+                </Box>
+
+            </Box>
             <Card>
                 <CardHeader
                     title="Requests List"
