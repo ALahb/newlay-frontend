@@ -34,7 +34,6 @@ export default function AddRequestForm() {
     const navigate = useNavigate();
     const { createRequest, checkPatientByNationality } = useClinicRequest();
     // États
-    const [status, setStatus] = useState('');
     const [nationalityId, setNationalityId] = useState('');
     const [fullName, setFullName] = useState('');
     const [nationalityIdInRequest, setNationalityIdInRequest] = useState('');
@@ -42,6 +41,7 @@ export default function AddRequestForm() {
     const [requestType, setRequestType] = useState([]);
     const [hospital, setHospital] = useState('');
     const [phone, setPhone] = useState('');
+    const [birthday, setBirthday] = useState('');
     const [emergency, setEmergency] = useState('yes');
     const [ivContrast, setIvContrast] = useState('yes');
     const [previousOperation, setPreviousOperation] = useState('yes');
@@ -51,37 +51,30 @@ export default function AddRequestForm() {
     const [referralDoctor, setReferralDoctor] = useState('');
     const [oldStudy, setOldStudy] = useState('yes');
     const [complaint, setComplaint] = useState('');
-    const [file, setFile] = useState(null);
-    // Supprimé : const [price, setPrice] = useState('');
-    // Supprimé : const [paymentType, setPaymentType] = useState('cash');
     const [result, setResult] = useState(null);
     const [error, setError] = useState('');
-
-    const handleFileChange = (e) => {
-        setFile(e.target.files[0]);
-    };
 
     const handleSubmit = async (e) => {
         e.preventDefault();
 
         const formData = new FormData();
         formData.append('nationality_id', nationalityIdInRequest);
-        formData.append('clinic_id', clinic);
+        formData.append('clinic_provider_id', clinic);
+        formData.append('clinic_receiver_id', clinic);
         formData.append('request_types', JSON.stringify(requestType));
         formData.append('full_name', fullName);
+        formData.append('birthday', birthday);
         formData.append('phone', phone);
-        formData.append('is_emergency', emergency === 'yes');
-        formData.append('with_iv_contrast', ivContrast === 'yes');
-        formData.append('has_previous_operations', previousOperation === 'yes');
+        formData.append('is_emergency', emergency === 'yes' ? 'true' : 'false');
+        formData.append('with_iv_contrast', ivContrast === 'yes' ? 'true' : 'false');
+        formData.append('has_previous_operations', previousOperation === 'yes' ? 'true' : 'false');
         formData.append('previous_operations_details', previousOperationNote);
-        formData.append('received_medications', receivedMedication === 'yes');
+        formData.append('received_medications', receivedMedication === 'yes' ? 'true' : 'false');
         formData.append('medications_details', receivedMedicationNote);
         formData.append('referral_doctor', referralDoctor);
-        formData.append('has_old_study', oldStudy === 'yes');
+        formData.append('has_old_study', oldStudy === 'yes' ? 'true' : 'false');
         formData.append('complaint_history', complaint);
-        if (file) formData.append('attachment_path', file);
-        // Supprimé : formData.append('price', price);
-        // Supprimé : formData.append('payment_type', paymentType);
+        
         try {
             await createRequest(formData);
             navigate('/');
@@ -205,6 +198,16 @@ export default function AddRequestForm() {
                         sx={{ mb: 3 }}
                         value={fullName}
                         onChange={(e) => setFullName(e.target.value)}
+                    />
+
+                    <TextField
+                        label="Birthday"
+                        type="date"
+                        fullWidth
+                        sx={{ mb: 3 }}
+                        value={birthday}
+                        onChange={(e) => setBirthday(e.target.value)}
+                        InputLabelProps={{ shrink: true }}
                     />
 
                     <TextField
@@ -355,12 +358,6 @@ export default function AddRequestForm() {
                         value={complaint}
                         onChange={(e) => setComplaint(e.target.value)}
                     />
-
-                    <Button variant="outlined" component="label" sx={{ mb: 2 }}>
-                        Upload File
-                        <input type="file" hidden onChange={handleFileChange} />
-                    </Button>
-                    {file && <Box>Fichier sélectionné: {file.name}</Box>}
                 </CardContent>
             </Card>
 

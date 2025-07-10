@@ -20,6 +20,7 @@ import {
     TextField,
     MenuItem,
     Box,
+    Pagination,
 } from '@mui/material';
 import { Visibility, Delete, AttachMoneyOutlined, HourglassEmpty, Cancel, MedicalServices, CheckCircle, PictureAsPdf } from '@mui/icons-material';
 import { useNavigate } from 'react-router-dom';
@@ -45,21 +46,31 @@ export default function ClinicRequests() {
         total_clinic_receivers: 0,
         total_clinic_providers: 0,
     });
+    const [page, setPage] = useState(1);
+    const [pagination, setPagination] = useState({
+        currentPage: 1,
+        totalPages: 1,
+        totalCount: 0,
+        limit: 5,
+        hasNextPage: false,
+        hasPrevPage: false,
+    });
     const navigate = useNavigate();
     const { getAllRequests, deleteRequest, getStats } = useClinicRequest();
 
     useEffect(() => {
         const fetchData = async () => {
             try {
-                const data = await getAllRequests();
-                setRequests(data);
+                const response = await getAllRequests({}, page, 10);
+                setRequests(response.data);
+                setPagination(response.pagination);
             } catch (err) {
                 console.error('Erreur lors de la récupération des requêtes', err);
             }
         };
 
         fetchData();
-    }, [getAllRequests]);
+    }, [getAllRequests, page]);
 
     useEffect(() => {
         const fetchStats = async () => {
@@ -77,7 +88,10 @@ export default function ClinicRequests() {
     const handleDelete = async () => {
         try {
             await deleteRequest(deleteId);
-            setRequests((prev) => prev.filter((req) => req.id !== deleteId));
+            // Reload current page data
+            const response = await getAllRequests({}, page, 10);
+            setRequests(response.data);
+            setPagination(response.pagination);
             setDeleteId(null);
         } catch (error) {
             console.error("Erreur lors de la suppression :", error);
@@ -151,8 +165,10 @@ export default function ClinicRequests() {
                     status: filters.status,
                 };
 
-                const data = await getAllRequests(trimmedFilters);
-                setRequests(data);
+                const response = await getAllRequests(trimmedFilters, 1, 10);
+                setRequests(response.data);
+                setPagination(response.pagination);
+                setPage(1); // Reset to first page when filters change
             } catch (err) {
                 console.error("Erreur lors de la récupération filtrée :", err);
             }
@@ -173,10 +189,13 @@ export default function ClinicRequests() {
         { value: 'finished', label: 'Finished' },
     ];
 
+    const handlePageChange = (event, newPage) => {
+        setPage(newPage);
+    };
 
     return (
         <>
-            <Box sx={{ display: 'flex', flexDirection: 'column', gap: 3, mb: 3 }}>
+            <Box sx={{ display: 'flex', flexDirection: 'column', gap: 3, mb: 3, width: '100%' }}>
 
                 <DashboardStats
                     totalRequests={stats.total_requests}
@@ -257,7 +276,7 @@ export default function ClinicRequests() {
                             <Table>
                                 <TableHead>
                                     <TableRow>
-                                        <TableCell>#</TableCell>
+                                        <TableCell>ID</TableCell>
                                         <TableCell>Patient Name</TableCell>
                                         <TableCell>Nationality ID</TableCell>
                                         <TableCell>Receiver Clinic</TableCell>
@@ -267,9 +286,9 @@ export default function ClinicRequests() {
                                     </TableRow>
                                 </TableHead>
                                 <TableBody>
-                                    {requests.map((item) => (
+                                    {requests.slice().reverse().map((item, index) => (
                                         <TableRow key={item.id}>
-                                            <TableCell>{item.id}</TableCell>
+                                            <TableCell>{index + 1}</TableCell>
                                             <TableCell>{item.Patient?.full_name}</TableCell>
                                             <TableCell>{item.Patient?.nationality_id}</TableCell>
                                             <TableCell>{item?.receiverClinic?.name}</TableCell>
@@ -314,6 +333,23 @@ export default function ClinicRequests() {
                     )}
                 </CardContent>
             </Card>
+
+            {/* Pagination Controls */}
+            {requests.length > 0 && (
+                <Box sx={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', mt: 2, p: 2 }}>
+                    <Typography variant="body2" color="textSecondary">
+                        Showing {((pagination.currentPage - 1) * pagination.limit) + 1} to {Math.min(pagination.currentPage * pagination.limit, pagination.totalCount)} of {pagination.totalCount} results
+                    </Typography>
+                    <Pagination 
+                        count={pagination.totalPages} 
+                        page={pagination.currentPage} 
+                        onChange={handlePageChange}
+                        color="primary"
+                        showFirstButton 
+                        showLastButton
+                    />
+                </Box>
+            )}
 
             <Dialog open={deleteId !== null} onClose={() => setDeleteId(null)}>
                 <DialogTitle>Are you sure you want to delete this request?</DialogTitle>

@@ -19,20 +19,40 @@ export default function PreviewRequest({ initialData }) {
     function formatRequestTypes(requestTypes) {
         if (!requestTypes) return [];
 
-        if (typeof requestTypes === 'string') {
+        let types = [];
+
+        // If it's already an array, use it directly
+        if (Array.isArray(requestTypes)) {
+            types = requestTypes;
+        }
+        // If it's a string, try to parse it as JSON
+        else if (typeof requestTypes === 'string') {
             try {
                 const parsed = JSON.parse(requestTypes);
-                if (Array.isArray(parsed)) return parsed;
-                return [String(parsed)];
-            } catch {
-                return [requestTypes];
+                types = Array.isArray(parsed) ? parsed : [parsed];
+            } catch (error) {
+                // If parsing fails, clean the string and split by comma
+                const cleaned = requestTypes.replace(/[\[\]"]/g, '');
+                types = cleaned ? cleaned.split(',').map(t => t.trim()) : [];
             }
         }
-        if (Array.isArray(requestTypes)) return requestTypes;
-        return [String(requestTypes)];
+        // Fallback: convert to string
+        else {
+            types = [String(requestTypes)];
+        }
+
+        // Clean each type and remove empty ones
+        return types
+            .map(type => String(type).replace(/[\[\]"]/g, '').trim())
+            .filter(type => type.length > 0);
     }
 
     const requestTypesArray = formatRequestTypes(initialData.request_types);
+    
+    // Debug: Log the request_types
+    console.log('Raw request_types:', initialData.request_types);
+    console.log('Formatted request_types:', requestTypesArray);
+    
     return (
         <Card sx={{ maxWidth: 700, mx: 'auto', p: 2 }}>
             <CardContent>
@@ -89,11 +109,19 @@ export default function PreviewRequest({ initialData }) {
                         Request Type
                     </Typography>
                     <Stack direction="row" spacing={1} flexWrap="wrap" mb={2}>
-                        {requestTypesArray.length > 0
-                            ? requestTypesArray.map((type, index) => (
-                                <Chip key={index} label={type} size="small" />
+                        {requestTypesArray && requestTypesArray.length > 0 ? (
+                            requestTypesArray.map((type, index) => (
+                                <Chip 
+                                    key={index} 
+                                    label={String(type)} 
+                                    size="small" 
+                                    color="primary"
+                                    variant="outlined"
+                                />
                             ))
-                            : '-'}
+                        ) : (
+                            <Typography color="textSecondary">No request types specified</Typography>
+                        )}
                     </Stack>
 
                     <Typography variant="body2" color="textSecondary">

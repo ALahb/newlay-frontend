@@ -5,7 +5,7 @@ import { TransferWithinAStation, Autorenew, CheckCircle, HomeWork } from '@mui/i
 export default function DashboardStats({ totalRequests, totalRequestsProgress, totalResults, nbClients, nbProviders }) {
   return (
     <Box width={'100%'}>
-      <Grid container spacing={2}>
+      <Grid container spacing={12}>
         <Grid item xs={12} lg={3}>
           <Card sx={{ borderRadius: 2, bgcolor: blue[700], color: 'white' }}>
             <CardContent sx={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>

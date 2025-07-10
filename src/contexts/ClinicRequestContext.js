@@ -6,7 +6,7 @@ const ClinicRequestContext = createContext();
 export const ClinicRequestProvider = ({ children }) => {
 
     // Méthode GET pour toutes les requêtes
-    const getAllRequests = async (filters = {}) => {
+    const getAllRequests = async (filters = {}, page = 1, limit = 5) => {
         try {
             const params = new URLSearchParams();
 
@@ -17,9 +17,13 @@ export const ClinicRequestProvider = ({ children }) => {
             if (filters.clinic_receiver_name) params.append('clinic_receiver_name', filters.clinic_receiver_name);
             if (filters.clinic_provider_name) params.append('clinic_provider_name', filters.clinic_provider_name);
             if (filters.status) params.append('status', filters.status);
+            
+            // Add pagination parameters
+            params.append('page', page);
+            params.append('limit', limit);
 
             const res = await api.get(`/clinic-requests?${params.toString()}`);
-            return res.data;
+            return res.data; // Returns { data: [...], pagination: {...} }
         } catch (error) {
             console.error("Erreur lors de la récupération des requêtes :", error);
             throw error;
