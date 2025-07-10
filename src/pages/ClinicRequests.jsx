@@ -21,6 +21,7 @@ import {
     MenuItem,
     Box,
     Pagination,
+    Grid,
 } from '@mui/material';
 import { Visibility, Delete, AttachMoneyOutlined, HourglassEmpty, Cancel, MedicalServices, CheckCircle, PictureAsPdf } from '@mui/icons-material';
 import { useNavigate } from 'react-router-dom';
@@ -194,174 +195,173 @@ export default function ClinicRequests() {
     };
 
     return (
-        <>
-            <Box sx={{ display: 'flex', flexDirection: 'column', gap: 3, mb: 3, width: '100%' }}>
+<>
+  <Box sx={{ display: 'flex', flexDirection: 'column', gap: 3, mb: 3, width: '100%' }}>
+    <DashboardStats
+      totalRequests={stats.total_requests}
+      totalRequestsProgress={stats.in_progress_requests}
+      totalResults={stats.finished_requests}
+      nbClients={stats.total_clinic_receivers}
+      nbProviders={stats.total_clinic_providers}
+    />
 
-                <DashboardStats
-                    totalRequests={stats.total_requests}
-                    totalRequestsProgress={stats.in_progress_requests}
-                    totalResults={stats.finished_requests}
-                    nbClients={stats.total_clinic_receivers}
-                    nbProviders={stats.total_clinic_providers}
-                />
-                <Box sx={{
-                    display: 'flex',
-                    // flexWrap: 'wrap',
-                    gap: 2,
-                    // mb: 2,
-                    justifyContent: 'space-between',
-                }}>
-                    <TextField
-                        label="Start Date"
-                        type="date"
-                        InputLabelProps={{ shrink: true }}
-                        value={filters.startDate}
-                        onChange={(e) => setFilters({ ...filters, startDate: e.target.value })}
-                    />
-                    <TextField
-                        label="End Date"
-                        type="date"
-                        InputLabelProps={{ shrink: true }}
-                        value={filters.endDate}
-                        onChange={(e) => setFilters({ ...filters, endDate: e.target.value })}
-                    />
-                    <TextField
-                        label="Nationality ID"
-                        value={filters.nationalityId}
-                        onChange={(e) => setFilters({ ...filters, nationalityId: e.target.value })}
-                    />
-                    <TextField
-                        label="Receiver Clinic"
-                        value={filters.receiverClinic}
-                        onChange={(e) => setFilters({ ...filters, receiverClinic: e.target.value })}
-                    />
-                    <TextField
-                        label="Provider Clinic"
-                        value={filters.providerClinic}
-                        onChange={(e) => setFilters({ ...filters, providerClinic: e.target.value })}
-                    />
-                    <TextField
-                        id="status-select"
-                        select
-                        label="Status"
-                        value={filters.status || ''}
-                        onChange={(e) => setFilters({ ...filters, status: e.target.value })}
-                        sx={{ minWidth: 200 }}
-                    >
-                        {statuses.map((option) => (
-                            <MenuItem key={option.value} value={option.value}>
-                                {option.label}
-                            </MenuItem>
-                        ))}
-                    </TextField>
+    {/* Filters */}
+<Box
+  sx={{
+    display: 'flex',
+    flexWrap: 'wrap',
+    flexDirection: { xs: 'column', md: 'row' },
+    gap: 2,
+    mb: 2,
+  }}
+>
+  {[ 
+    { label: 'Start Date', type: 'date', value: filters.startDate, key: 'startDate' },
+    { label: 'End Date', type: 'date', value: filters.endDate, key: 'endDate' },
+    { label: 'Nationality ID', value: filters.nationalityId, key: 'nationalityId' },
+    { label: 'Receiver Clinic', value: filters.receiverClinic, key: 'receiverClinic' },
+    { label: 'Provider Clinic', value: filters.providerClinic, key: 'providerClinic' }
+  ].map(({ label, type, value, key }) => (
+    <TextField
+      key={key}
+      label={label}
+      type={type || 'text'}
+      InputLabelProps={type === 'date' ? { shrink: true } : undefined}
+      value={value}
+      onChange={(e) => setFilters({ ...filters, [key]: e.target.value })}
+      fullWidth
+      sx={{ flex: { md: '1 1 200px', lg: '1 1 250px' } }}
+    />
+  ))}
+
+  {/* Status Select */}
+  <TextField
+    select
+    label="Status"
+    value={filters.status || ''}
+    onChange={(e) => setFilters({ ...filters, status: e.target.value })}
+    fullWidth
+    sx={{ flex: { md: '1 1 200px', lg: '1 1 250px' } }}
+  >
+    {statuses.map((option) => (
+      <MenuItem key={option.value} value={option.value}>
+        {option.label}
+      </MenuItem>
+    ))}
+  </TextField>
+</Box>
 
 
-                </Box>
+  </Box>
 
-            </Box>
-            <Card>
-                <CardHeader
-                    title="Requests List"
-                    action={
-                        <Button variant="contained" color="primary" onClick={() => navigate('/clinicrequests/add')}>
-                            Add Request
-                        </Button>
-                    }
-                />
-                <CardContent>
-                    {requests.length === 0 ? (
-                        <Typography color="error">Empty list</Typography>
-                    ) : (
-                        <TableContainer component={Paper}>
-                            <Table>
-                                <TableHead>
-                                    <TableRow>
-                                        <TableCell>ID</TableCell>
-                                        <TableCell>Patient Name</TableCell>
-                                        <TableCell>Nationality ID</TableCell>
-                                        <TableCell>Receiver Clinic</TableCell>
-                                        <TableCell>Provider Clinic</TableCell>
-                                        <TableCell>Status</TableCell>
-                                        <TableCell>Actions</TableCell>
-                                    </TableRow>
-                                </TableHead>
-                                <TableBody>
-                                    {requests.slice().reverse().map((item, index) => (
-                                        <TableRow key={item.id}>
-                                            <TableCell>{index + 1}</TableCell>
-                                            <TableCell>{item.Patient?.full_name}</TableCell>
-                                            <TableCell>{item.Patient?.nationality_id}</TableCell>
-                                            <TableCell>{item?.receiverClinic?.name}</TableCell>
-                                            <TableCell>{item?.providerClinic?.name}</TableCell>
-                                            <TableCell>{renderStatusIcon(item.status)}</TableCell>
-                                            <TableCell>
-                                                <IconButton
-                                                    color="info"
-                                                    onClick={() => navigate(`/clinicrequests/edit/${item.id}`)}
-                                                >
-                                                    <Visibility />
-                                                </IconButton>
-                                                {item.status === 'waiting_for_payment' && (
-                                                    <Tooltip title="Proceed to Payment">
-                                                        <IconButton
-                                                            color="success"
-                                                            onClick={() => navigate(`/clinicrequests/payment/${item.id}`)}
-                                                        >
-                                                            <AttachMoneyOutlined />
-                                                        </IconButton>
-                                                    </Tooltip>
-                                                )}
-                                                <IconButton color="error" onClick={() => setDeleteId(item.id)}>
-                                                    <Delete />
-                                                </IconButton>
-                                                {item.status === 'finished' && (
-                                                    <Tooltip title="Download PDF">
-                                                        <IconButton
-                                                            color="primary"
-                                                            onClick={() => handleDownloadPDF(item.report_file)}
-                                                        >
-                                                            <PictureAsPdf />
-                                                        </IconButton>
-                                                    </Tooltip>
-                                                )}
-                                            </TableCell>
-                                        </TableRow>
-                                    ))}
-                                </TableBody>
-                            </Table>
-                        </TableContainer>
+  {/* Table Card */}
+  <Card>
+    <CardHeader
+      title="Requests List"
+      action={
+        <Button variant="contained" color="primary" onClick={() => navigate('/clinicrequests/add')}>
+          Add Request
+        </Button>
+      }
+    />
+    <CardContent>
+      {requests.length === 0 ? (
+        <Typography color="error">Empty list</Typography>
+      ) : (
+        <TableContainer component={Paper} sx={{ overflowX: 'auto' }}>
+          <Table size="small">
+            <TableHead>
+              <TableRow>
+                <TableCell>ID</TableCell>
+                <TableCell>Patient Name</TableCell>
+                <TableCell>Nationality ID</TableCell>
+                <TableCell>Receiver Clinic</TableCell>
+                <TableCell>Provider Clinic</TableCell>
+                <TableCell>Status</TableCell>
+                <TableCell>Actions</TableCell>
+              </TableRow>
+            </TableHead>
+            <TableBody>
+              {requests.slice().reverse().map((item, index) => (
+                <TableRow key={item.id}>
+                  <TableCell>{index + 1}</TableCell>
+                  <TableCell>{item.Patient?.full_name}</TableCell>
+                  <TableCell>{item.Patient?.nationality_id}</TableCell>
+                  <TableCell>{item?.receiverClinic?.name}</TableCell>
+                  <TableCell>{item?.providerClinic?.name}</TableCell>
+                  <TableCell>{renderStatusIcon(item.status)}</TableCell>
+                  <TableCell>
+                    <IconButton color="info" onClick={() => navigate(`/clinicrequests/edit/${item.id}`)}>
+                      <Visibility />
+                    </IconButton>
+                    {item.status === 'waiting_for_payment' && (
+                      <Tooltip title="Proceed to Payment">
+                        <IconButton color="success" onClick={() => navigate(`/clinicrequests/payment/${item.id}`)}>
+                          <AttachMoneyOutlined />
+                        </IconButton>
+                      </Tooltip>
                     )}
-                </CardContent>
-            </Card>
+                    <IconButton color="error" onClick={() => setDeleteId(item.id)}>
+                      <Delete />
+                    </IconButton>
+                    {item.status === 'finished' && (
+                      <Tooltip title="Download PDF">
+                        <IconButton color="primary" onClick={() => handleDownloadPDF(item.report_file)}>
+                          <PictureAsPdf />
+                        </IconButton>
+                      </Tooltip>
+                    )}
+                  </TableCell>
+                </TableRow>
+              ))}
+            </TableBody>
+          </Table>
+        </TableContainer>
+      )}
+    </CardContent>
+  </Card>
 
-            {/* Pagination Controls */}
-            {requests.length > 0 && (
-                <Box sx={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', mt: 2, p: 2 }}>
-                    <Typography variant="body2" color="textSecondary">
-                        Showing {((pagination.currentPage - 1) * pagination.limit) + 1} to {Math.min(pagination.currentPage * pagination.limit, pagination.totalCount)} of {pagination.totalCount} results
-                    </Typography>
-                    <Pagination 
-                        count={pagination.totalPages} 
-                        page={pagination.currentPage} 
-                        onChange={handlePageChange}
-                        color="primary"
-                        showFirstButton 
-                        showLastButton
-                    />
-                </Box>
-            )}
+  {/* Pagination Controls */}
+  {requests.length > 0 && (
+    <Box
+      sx={{
+        display: 'flex',
+        flexDirection: { xs: 'column', sm: 'row' },
+        justifyContent: 'space-between',
+        alignItems: 'center',
+        mt: 2,
+        p: 2,
+        gap: 2,
+      }}
+    >
+      <Typography variant="body2" color="textSecondary">
+        Showing {((pagination.currentPage - 1) * pagination.limit) + 1} to{' '}
+        {Math.min(pagination.currentPage * pagination.limit, pagination.totalCount)} of {pagination.totalCount} results
+      </Typography>
+      <Pagination
+        count={pagination.totalPages}
+        page={pagination.currentPage}
+        onChange={handlePageChange}
+        color="primary"
+        showFirstButton
+        showLastButton
+      />
+    </Box>
+  )}
 
-            <Dialog open={deleteId !== null} onClose={() => setDeleteId(null)}>
-                <DialogTitle>Are you sure you want to delete this request?</DialogTitle>
-                <DialogActions>
-                    <Button onClick={() => setDeleteId(null)} color="primary">
-                        Cancel
-                    </Button>
-                    <Button onClick={handleDelete} color="error">
-                        Delete
-                    </Button>
-                </DialogActions>
-            </Dialog>
-        </>
+  {/* Delete Dialog */}
+  <Dialog open={deleteId !== null} onClose={() => setDeleteId(null)}>
+    <DialogTitle>Are you sure you want to delete this request?</DialogTitle>
+    <DialogActions>
+      <Button onClick={() => setDeleteId(null)} color="primary">
+        Cancel
+      </Button>
+      <Button onClick={handleDelete} color="error">
+        Delete
+      </Button>
+    </DialogActions>
+  </Dialog>
+</>
+
     );
 }
