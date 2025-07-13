@@ -49,10 +49,6 @@ export default function PreviewRequest({ initialData }) {
 
     const requestTypesArray = formatRequestTypes(initialData.request_types);
     
-    // Debug: Log the request_types
-    console.log('Raw request_types:', initialData.request_types);
-    console.log('Formatted request_types:', requestTypesArray);
-    
     return (
         <Card sx={{ maxWidth: 700, mx: 'auto', p: 2 }}>
             <CardContent>

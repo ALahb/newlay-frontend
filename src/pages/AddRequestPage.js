@@ -1,4 +1,4 @@
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import {
     Box,
     Card,
@@ -18,22 +18,24 @@ import {
     OutlinedInput,
     Chip,
     Typography,
+    CircularProgress,
+    Alert,
 } from '@mui/material';
 import { useNavigate } from 'react-router-dom';
 import { useClinicRequest } from '../contexts/ClinicRequestContext';
+import { getAllOrganizations, getAllModalityRequestTypes } from '../api';
 
 const clinicsExample = [
     { id: '1', name: 'Clinic 1' },
     { id: '2', name: 'Clinic 2' },
 ];
-const requestTypes = ['Radio', 'IRM', 'Eco', 'N/A'];
-const hospitals = ['Clinic Zayatine', 'Clinic Pasteur', 'Bilateral', 'N/A'];
+const requestTypess = ['Radio', 'IRM', 'Eco', 'N/A'];
 
 export default function AddRequestForm() {
-
     const navigate = useNavigate();
     const { createRequest, checkPatientByNationality } = useClinicRequest();
-    // États
+    
+    // States for form data
     const [nationalityId, setNationalityId] = useState('');
     const [fullName, setFullName] = useState('');
     const [nationalityIdInRequest, setNationalityIdInRequest] = useState('');
@@ -53,6 +55,53 @@ export default function AddRequestForm() {
     const [complaint, setComplaint] = useState('');
     const [result, setResult] = useState(null);
     const [error, setError] = useState('');
+
+    // States for API data
+    const [organizations, setOrganizations] = useState([]);
+    const [requestTypes, setRequestTypes] = useState([]);
+    const [loading, setLoading] = useState(true);
+    const [apiError, setApiError] = useState('');
+
+    // Fetch organizations and request types on component mount
+    useEffect(() => {
+        const fetchData = async () => {
+            try {
+                setLoading(true);
+                setApiError('');
+
+                // Fetch both organizations and request types in parallel
+                const [orgsResponse, typesResponse] = await Promise.all([
+                    getAllOrganizations(),
+                    getAllModalityRequestTypes()
+                ]);
+
+                // Set organizations data
+                if (orgsResponse && orgsResponse.data) {
+                    setOrganizations(orgsResponse.message.data.result);
+                    
+                } else {
+                    console.warn('Organizations response format unexpected:', orgsResponse);
+                    setOrganizations([]);
+                }
+
+                // Set request types data
+                if (typesResponse && typesResponse.data) {
+                    setRequestTypes(typesResponse.message.data.result);
+                } else {
+                    console.warn('Request types response format unexpected:', typesResponse);
+                    setRequestTypes([]);
+                }
+
+            } catch (err) {
+                console.error('Error fetching data:', err);
+                setApiError('Failed to load organizations and request types. Please refresh the page.');
+            } finally {
+                setLoading(false);
+            }
+        };
+
+        fetchData();
+    }, []);
 
     const handleSubmit = async (e) => {
         e.preventDefault();
@@ -77,7 +126,7 @@ export default function AddRequestForm() {
         
         try {
             await createRequest(formData);
-            navigate('/');
+            navigate('/newlay/');
         } catch (error) {
             console.error('Erreur lors de la création de la requête', error);
         }
@@ -103,6 +152,31 @@ export default function AddRequestForm() {
             setError("Erreur lors de la vérification du patient.");
         }
     };
+
+    if (loading) {
+        return (
+            <Box display="flex" justifyContent="center" alignItems="center" minHeight="400px">
+                <CircularProgress />
+            </Box>
+        );
+    }
+
+    if (apiError) {
+        return (
+            <Box sx={{ maxWidth: 900, mx: 'auto', mt: 4, mb: 4, px: 2 }}>
+                <Alert severity="error" sx={{ mb: 2 }}>
+                    {apiError}
+                </Alert>
+                <Button 
+                    variant="contained" 
+                    onClick={() => window.location.reload()}
+                    sx={{ mt: 2 }}
+                >
+                    Refresh Page
+                </Button>
+            </Box>
+        );
+    }
 
     return (
         <Box
@@ -185,10 +259,10 @@ export default function AddRequestForm() {
                             )}
                         >
                             {requestTypes.map((type) => (
-                                <MenuItem key={type} value={type}>
-                                    {type}
+                                <MenuItem key={type.modality || type} value={type.modality || type}>
+                                    {type.modality || type}
                                 </MenuItem>
-                            ))}
+                            ))} 
                         </Select>
                     </FormControl>
 
@@ -227,9 +301,9 @@ export default function AddRequestForm() {
                             onChange={(e) => setHospital(e.target.value)}
                             label="Hospital"
                         >
-                            {hospitals.map((h) => (
-                                <MenuItem key={h} value={h}>
-                                    {h}
+                            {organizations.map((org) => (
+                                <MenuItem key={org._id || org} value={org._id || org}>
+                                    {org.name || org}
                                 </MenuItem>
                             ))}
                         </Select>

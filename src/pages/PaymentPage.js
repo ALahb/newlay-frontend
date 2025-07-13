@@ -57,7 +57,7 @@ export default function PaymentPage() {
             // Cas cash/credit uniquement
             setSuccess(true);
             setTimeout(() => {
-                navigate('/');
+                navigate('/newlay/');
             }, 1500);
         } catch (err) {
             setError(err.message || 'Payment failed');

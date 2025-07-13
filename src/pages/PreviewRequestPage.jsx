@@ -14,7 +14,6 @@ export default function PreviewRequestPage() {
         const fetchData = async () => {
             try {
                 const data = await getRequestById(id);
-                console.log(data);
 
                 setRequestData(data);
             } catch (error) {

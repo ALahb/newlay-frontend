@@ -259,7 +259,7 @@ export default function ClinicRequests() {
     <CardHeader
       title="Requests List"
       action={
-        <Button variant="contained" color="primary" onClick={() => navigate('/clinicrequests/add')}>
+        <Button variant="contained" color="primary" onClick={() => navigate('/newlay/clinicrequests/add')}>
           Add Request
         </Button>
       }
@@ -291,12 +291,12 @@ export default function ClinicRequests() {
                   <TableCell>{item?.providerClinic?.name}</TableCell>
                   <TableCell>{renderStatusIcon(item.status)}</TableCell>
                   <TableCell>
-                    <IconButton color="info" onClick={() => navigate(`/clinicrequests/edit/${item.id}`)}>
+                    <IconButton color="info" onClick={() => navigate(`/newlay/clinicrequests/edit/${item.id}`)}>
                       <Visibility />
                     </IconButton>
                     {item.status === 'waiting_for_payment' && (
                       <Tooltip title="Proceed to Payment">
-                        <IconButton color="success" onClick={() => navigate(`/clinicrequests/payment/${item.id}`)}>
+                        <IconButton color="success" onClick={() => navigate(`/newlay/clinicrequests/payment/${item.id}`)}>
                           <AttachMoneyOutlined />
                         </IconButton>
                       </Tooltip>

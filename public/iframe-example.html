@@ -1,0 +1,128 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Iframe Integration Example</title>
+    <style>
+        body {
+            font-family: Arial, sans-serif;
+            margin: 20px;
+            background-color: #f5f5f5;
+        }
+        .container {
+            max-width: 1200px;
+            margin: 0 auto;
+            background: white;
+            padding: 20px;
+            border-radius: 8px;
+            box-shadow: 0 2px 10px rgba(0,0,0,0.1);
+        }
+        .iframe-container {
+            margin: 20px 0;
+            border: 1px solid #ddd;
+            border-radius: 8px;
+            overflow: hidden;
+        }
+        iframe {
+            width: 100%;
+            height: 800px;
+            border: none;
+        }
+        .controls {
+            margin: 20px 0;
+            padding: 15px;
+            background: #f8f9fa;
+            border-radius: 5px;
+        }
+        input, button {
+            padding: 8px 12px;
+            margin: 5px;
+            border: 1px solid #ddd;
+            border-radius: 4px;
+        }
+        button {
+            background: #007bff;
+            color: white;
+            cursor: pointer;
+        }
+        button:hover {
+            background: #0056b3;
+        }
+        .url-display {
+            background: #e9ecef;
+            padding: 10px;
+            border-radius: 4px;
+            font-family: monospace;
+            word-break: break-all;
+            margin: 10px 0;
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <h1>Clinic Management Dashboard - Iframe Integration</h1>
+        
+        <div class="controls">
+            <h3>Configure Iframe Parameters</h3>
+            <label>User ID: <input type="text" id="userId" value="676301e1818b3e9f34f20fc2" placeholder="Enter User ID"></label><br>
+            <label>Organization ID: <input type="text" id="organizationId" value="5a4db4c32d7f2fc398abd870" placeholder="Enter Organization ID"></label><br>
+            <button onclick="updateIframe()">Update Iframe</button>
+            <button onclick="resetToDefaults()">Reset to Defaults</button>
+        </div>
+
+        <div class="url-display" id="urlDisplay">
+            Current URL: <span id="currentUrl"></span>
+        </div>
+
+        <div class="iframe-container">
+            <iframe id="clinicIframe" title="Clinic Management Dashboard"></iframe>
+        </div>
+
+        <div>
+            <h3>Integration Instructions:</h3>
+            <ol>
+                <li>Enter the User ID and Organization ID in the fields above</li>
+                <li>Click "Update Iframe" to load the dashboard with your parameters</li>
+                <li>The iframe will fetch user and organization data based on the provided IDs</li>
+                <li>You can also directly modify the URL parameters in the address bar</li>
+            </ol>
+            
+            <h3>URL Format:</h3>
+            <code>http://localhost:3000/newlay/?userId=YOUR_USER_ID&organizationId=YOUR_ORG_ID</code>
+        </div>
+    </div>
+
+    <script>
+        function buildIframeUrl(userId, organizationId) {
+            const baseUrl = 'http://localhost:3000/newlay/';
+            const params = new URLSearchParams();
+            if (userId) params.append('userId', userId);
+            if (organizationId) params.append('organizationId', organizationId);
+            
+            const queryString = params.toString();
+            return queryString ? `${baseUrl}?${queryString}` : baseUrl;
+        }
+
+        function updateIframe() {
+            const userId = document.getElementById('userId').value;
+            const organizationId = document.getElementById('organizationId').value;
+            
+            const iframeUrl = buildIframeUrl(userId, organizationId);
+            document.getElementById('clinicIframe').src = iframeUrl;
+            document.getElementById('currentUrl').textContent = iframeUrl;
+        }
+
+        function resetToDefaults() {
+            document.getElementById('userId').value = '676301e1818b3e9f34f20fc2';
+            document.getElementById('organizationId').value = '5a4db4c32d7f2fc398abd870';
+            updateIframe();
+        }
+
+        // Initialize on page load
+        window.onload = function() {
+            updateIframe();
+        };
+    </script>
+</body>
+</html> 
