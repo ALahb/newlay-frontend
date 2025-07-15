@@ -70,4 +70,37 @@ export const getAllModalityRequestTypes = async () => {
     }
 };
 
+// Update clinic request status
+export const updateClinicRequestStatus = async (id, status) => {
+    try {
+        const response = await api.patch(`/clinic-requests/${id}/status`, { status });
+        return response.data;
+    } catch (error) {
+        console.error('Error updating clinic request status:', error);
+        throw error;
+    }
+};
+
+// Upload report file to a clinic request
+export const uploadClinicRequestReport = async (id, url_file) => {
+    try {
+        const response = await api.post(`/clinic-requests/${id}/report`, { url_file });
+        return response.data;
+    } catch (error) {
+        console.error('Error uploading clinic request report:', error);
+        throw error;
+    }
+};
+
+// Create AWS case details
+export const createAwsCaseDetails = async ({ src_org_id, dest_org_id, patient_id, radgate_id }) => {
+    try {
+        const response = await api.post('/aws/case-details', { src_org_id, dest_org_id, patient_id, radgate_id });
+        return response.data;
+    } catch (error) {
+        console.error('Error creating AWS case details:', error);
+        throw error;
+    }
+};
+
 export default api;

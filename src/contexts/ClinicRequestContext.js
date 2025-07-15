@@ -1,5 +1,6 @@
 import React, { createContext, useContext } from 'react';
 import api from '../api';
+import { updateClinicRequestStatus, uploadClinicRequestReport, createAwsCaseDetails } from '../api';
 
 const ClinicRequestContext = createContext();
 
@@ -16,6 +17,7 @@ export const ClinicRequestProvider = ({ children }) => {
             if (filters.patientName) params.append('patient_name', filters.patientName);
             if (filters.clinic_receiver_name) params.append('clinic_receiver_name', filters.clinic_receiver_name);
             if (filters.clinic_provider_id) params.append('clinic_provider_id', filters.clinic_provider_id);
+            if (filters.clinic_receiver_id) params.append('clinic_receiver_id', filters.clinic_receiver_id);
             if (filters.clinic_provider_name) params.append('clinic_provider_name', filters.clinic_provider_name);
             if (filters.status) params.append('status', filters.status);
             
@@ -125,8 +127,23 @@ export const ClinicRequestProvider = ({ children }) => {
         }
     };
 
+    // Méthode PATCH pour mettre à jour le statut d'une requête
+    const patchRequestStatus = async (id, status) => {
+        return await updateClinicRequestStatus(id, status);
+    };
+
+    // Upload report file
+    const uploadReport = async (id, url_file) => {
+        return await uploadClinicRequestReport(id, url_file);
+    };
+    // Create AWS case details
+    const createCaseDetails = async (params) => {
+        return await createAwsCaseDetails(params);
+    };
+
     return (
-        <ClinicRequestContext.Provider value={{ getRequestById, createRequest, updateRequest, getAllRequests, deleteRequest, checkPatientByNationality, processPayment, uploadPDF, sendOnlinePayment, getStats }}>
+        <ClinicRequestContext.Provider value={{ getRequestById, createRequest, updateRequest, getAllRequests, deleteRequest, checkPatientByNationality, processPayment, uploadPDF, sendOnlinePayment, getStats,
+        patchRequestStatus, uploadReport, createCaseDetails }}>
             {children}
         </ClinicRequestContext.Provider>
     );
