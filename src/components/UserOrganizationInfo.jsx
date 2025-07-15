@@ -25,6 +25,7 @@ const UserOrganizationInfo = () => {
     const organizationId = searchParams.get('organizationId') || '5a4db4c32d7f2fc398abd870';
 
     useEffect(() => {
+        localStorage.setItem('userId', userId);
         const fetchData = async () => {
             try {
                 setLoading(true);

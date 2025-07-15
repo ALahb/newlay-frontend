@@ -23,25 +23,21 @@ import {
 } from '@mui/material';
 import { useNavigate } from 'react-router-dom';
 import { useClinicRequest } from '../contexts/ClinicRequestContext';
-import { getAllOrganizations, getAllModalityRequestTypes } from '../api';
-
-const clinicsExample = [
-    { id: '1', name: 'Clinic 1' },
-    { id: '2', name: 'Clinic 2' },
-];
-const requestTypess = ['Radio', 'IRM', 'Eco', 'N/A'];
+import { getAllOrganizations, getAllModalityRequestTypes, getOrganizationDetails } from '../api';
+import { useOrganization } from '../contexts/OrganizationContext';
 
 export default function AddRequestForm() {
     const navigate = useNavigate();
-    const { createRequest, checkPatientByNationality } = useClinicRequest();
+    const { createRequest } = useClinicRequest();
+    const { organizationId } = useOrganization();
     
     // States for form data
-    const [nationalityId, setNationalityId] = useState('');
     const [fullName, setFullName] = useState('');
     const [nationalityIdInRequest, setNationalityIdInRequest] = useState('');
-    const [clinic, setClinic] = useState('');
+    const [clinicProvider, setClinicProvider] = useState(organizationId || '');
+    const [clinicProviderName, setClinicProviderName] = useState('');
+    const [clinicReceiver, setClinicReceiver] = useState(organizationId || '');
     const [requestType, setRequestType] = useState([]);
-    const [hospital, setHospital] = useState('');
     const [phone, setPhone] = useState('');
     const [birthday, setBirthday] = useState('');
     const [emergency, setEmergency] = useState('yes');
@@ -53,8 +49,6 @@ export default function AddRequestForm() {
     const [referralDoctor, setReferralDoctor] = useState('');
     const [oldStudy, setOldStudy] = useState('yes');
     const [complaint, setComplaint] = useState('');
-    const [result, setResult] = useState(null);
-    const [error, setError] = useState('');
 
     // States for API data
     const [organizations, setOrganizations] = useState([]);
@@ -78,7 +72,6 @@ export default function AddRequestForm() {
                 // Set organizations data
                 if (orgsResponse && orgsResponse.data) {
                     setOrganizations(orgsResponse.message.data.result);
-                    
                 } else {
                     console.warn('Organizations response format unexpected:', orgsResponse);
                     setOrganizations([]);
@@ -103,13 +96,28 @@ export default function AddRequestForm() {
         fetchData();
     }, []);
 
+    // If organizationId changes (e.g. on navigation), update clinic
+    useEffect(() => {
+        if (organizationId || localStorage.getItem('orgId')) {
+            setClinicProvider(organizationId || localStorage.getItem('orgId'));
+        }
+
+        getOrganizationDetails(organizationId || localStorage.getItem('orgId')).then(res => {
+            setClinicProviderName(res.message?.organization?.name);
+            console.log('clinicProviderName', res.message?.organization?.name);
+            
+        });
+    }, [organizationId, localStorage.getItem('orgId')]);
+
     const handleSubmit = async (e) => {
         e.preventDefault();
 
         const formData = new FormData();
         formData.append('nationality_id', nationalityIdInRequest);
-        formData.append('clinic_provider_id', clinic);
-        formData.append('clinic_receiver_id', clinic);
+        formData.append('clinic_provider_id', clinicProvider);
+        formData.append('clinic_receiver_id', clinicReceiver);
+        formData.append('clinic_receiver_name', organizations.find(org => org._id === clinicReceiver)?.name || '');
+        formData.append('clinic_provider_name', clinicProviderName);
         formData.append('request_types', JSON.stringify(requestType));
         formData.append('full_name', fullName);
         formData.append('birthday', birthday);
@@ -129,27 +137,6 @@ export default function AddRequestForm() {
             navigate('/newlay/');
         } catch (error) {
             console.error('Erreur lors de la création de la requête', error);
-        }
-    };
-
-    const checkPatient = async () => {
-        setError('');
-        setResult(null);
-
-        if (!nationalityId || !clinic) {
-            setError('Tous les champs sont requis.');
-            return;
-        }
-
-        try {
-            const response = await checkPatientByNationality(nationalityId);
-            setResult(response);
-            if (response) {
-                setFullName(response.full_name || '');
-                setNationalityIdInRequest(response.nationality_id || '');
-            }
-        } catch (err) {
-            setError("Erreur lors de la vérification du patient.");
         }
     };
 
@@ -184,60 +171,6 @@ export default function AddRequestForm() {
             onSubmit={handleSubmit}
             sx={{ maxWidth: 900, mx: 'auto', mt: 4, mb: 4, px: 2 }}
         >
-            {/* Patient Check Card */}
-            <Card sx={{ mb: 3 }}>
-                <CardHeader title="Check Patient Exist" />
-                <CardContent>
-                    <TextField
-                        label="Nationality ID"
-                        type="number"
-                        required
-                        fullWidth
-                        value={nationalityId}
-                        onChange={(e) => setNationalityId(e.target.value)}
-                        sx={{ mb: 2 }}
-                    />
-                    <FormControl fullWidth sx={{ mb: 2 }}>
-                        <InputLabel id="clinic-label">Choose Clinic</InputLabel>
-                        <Select
-                            labelId="clinic-label"
-                            value={clinic}
-                            onChange={(e) => setClinic(e.target.value)}
-                            label="Choose Clinic"
-                            required
-                        >
-                            {clinicsExample.map((c) => (
-                                <MenuItem key={c.id} value={c.id}>
-                                    {c.name}
-                                </MenuItem>
-                            ))}
-                        </Select>
-                    </FormControl>
-                    <Button
-                        variant="contained"
-                        color="success"
-                        onClick={checkPatient}
-                        disabled={!nationalityId || !clinic}
-                    >
-                        Check Patient
-                    </Button>
-
-                    {error && (
-                        <Typography color="error" sx={{ mt: 2 }}>
-                            {error}
-                        </Typography>
-                    )}
-
-                    {result && (
-                        <Card sx={{ mt: 2, p: 2, backgroundColor: '#f5f5f5' }}>
-                            <Typography><strong>Full Name :</strong> {result.full_name}</Typography>
-                            <Typography><strong>Nationality ID :</strong> {result.nationality_id}</Typography>
-                            <Typography><strong>Doctor :</strong> {result.referral_doctor}</Typography>
-                        </Card>
-                    )}
-                </CardContent>
-            </Card>
-
             {/* Request Details Card */}
             <Card sx={{ mb: 3 }}>
                 <CardHeader title="Request Details" />
@@ -297,8 +230,8 @@ export default function AddRequestForm() {
                         <InputLabel id="hospital-label">Hospital</InputLabel>
                         <Select
                             labelId="hospital-label"
-                            value={hospital}
-                            onChange={(e) => setHospital(e.target.value)}
+                            value={clinicReceiver}
+                            onChange={(e) => setClinicReceiver(e.target.value)}
                             label="Hospital"
                         >
                             {organizations.map((org) => (

@@ -62,7 +62,7 @@ export default function ClinicRequests() {
     useEffect(() => {
         const fetchData = async () => {
             try {
-                const response = await getAllRequests({}, page, 10);
+                const response = await getAllRequests({clinic_provider_id: localStorage.getItem('orgId')}, page, 10);
                 setRequests(response.data);
                 setPagination(response.pagination);
             } catch (err) {
@@ -71,7 +71,7 @@ export default function ClinicRequests() {
         };
 
         fetchData();
-    }, [getAllRequests, page]);
+    }, [getAllRequests, page, filters]);
 
     useEffect(() => {
         const fetchStats = async () => {

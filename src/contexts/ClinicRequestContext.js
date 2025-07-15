@@ -15,6 +15,7 @@ export const ClinicRequestProvider = ({ children }) => {
             if (filters.nationalityId) params.append('nationality_id', filters.nationalityId);
             if (filters.patientName) params.append('patient_name', filters.patientName);
             if (filters.clinic_receiver_name) params.append('clinic_receiver_name', filters.clinic_receiver_name);
+            if (filters.clinic_provider_id) params.append('clinic_provider_id', filters.clinic_provider_id);
             if (filters.clinic_provider_name) params.append('clinic_provider_name', filters.clinic_provider_name);
             if (filters.status) params.append('status', filters.status);
             

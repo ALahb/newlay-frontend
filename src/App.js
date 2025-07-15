@@ -5,13 +5,15 @@ import ClinicRequests from './pages/ClinicRequests';
 import AddRequestPage from './pages/AddRequestPage';
 import EditRequestPage from './pages/PreviewRequestPage';
 import { ClinicRequestProvider } from './contexts/ClinicRequestContext';
+import { OrganizationProvider } from './contexts/OrganizationContext';
 import PaymentPage from './pages/PaymentPage';
 import UserOrganizationInfo from './components/UserOrganizationInfo';
 
 function App() {
   return (
-      <ClinicRequestProvider>
-        <Router>
+    <ClinicRequestProvider>
+      <Router>
+        <OrganizationProvider>
           <Container maxWidth="lg" sx={{ mt: 5 }}>
             <Typography variant="h4" gutterBottom>
               Clinic Management Dashboard
@@ -33,9 +35,9 @@ function App() {
               />
             </Routes>
           </Container>
-        </Router>
-
-      </ClinicRequestProvider>
+        </OrganizationProvider>
+      </Router>
+    </ClinicRequestProvider>
   );
 }
 
