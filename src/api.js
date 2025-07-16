@@ -4,6 +4,9 @@ const api = axios.create({
     baseURL: 'https://radgate.rology.net/api',
     headers: {
         'Content-Type': 'application/json',
+        'Cache-Control': 'no-cache',
+        'Pragma': 'no-cache',
+        'Expires': '0'
     },
 });
 
@@ -12,6 +15,9 @@ const awsApi = axios.create({
     baseURL: 'https://radgate.rology.net/aws',
     headers: {
         'Content-Type': 'application/json',
+        'Cache-Control': 'no-cache',
+        'Pragma': 'no-cache',
+        'Expires': '0'
     },
 });
 
