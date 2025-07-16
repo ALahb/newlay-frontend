@@ -382,7 +382,7 @@ export default function ClinicRequests() {
                                 </Tooltip>
                               </>
                             ) : (
-                              item.status !== 'finished' && (
+                              item.status !== 'finished' && item.status !== 'rejected' && item.status !== 'pending' && (
                                 <Tooltip title="Upload Report">
                                   <span>
                                     <IconButton color="primary" onClick={() => setUploadModal({ open: true, request: item })}>
