@@ -1,7 +1,7 @@
 import axios from 'axios';
 
 const api = axios.create({
-    baseURL: 'https://radgate.rology.net/api',
+    baseURL: 'http://api.radgate.rology.net/api',
     headers: {
         'Content-Type': 'application/json',
         'Cache-Control': 'no-cache',
@@ -12,7 +12,7 @@ const api = axios.create({
 
 // AWS API endpoints
 const awsApi = axios.create({
-    baseURL: 'https://radgate.rology.net/api/aws',
+    baseURL: 'https://api.radgate.rology.net/api/aws',
     headers: {
         'Content-Type': 'application/json',
         'Cache-Control': 'no-cache',
