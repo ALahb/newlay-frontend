@@ -1,6 +1,6 @@
 import React, { createContext, useContext } from 'react';
 import api from '../api';
-import { updateClinicRequestStatus, uploadClinicRequestReport, createAwsCaseDetails } from '../api';
+import { updateClinicRequestStatus, uploadClinicRequestReport, createAwsCaseDetails, sendPushNotification } from '../api';
 
 const ClinicRequestContext = createContext();
 
@@ -141,9 +141,14 @@ export const ClinicRequestProvider = ({ children }) => {
         return await createAwsCaseDetails(params);
     };
 
+    // Send push notification
+    const sendPushNotificationToOrg = async (organization_id, notification) => {
+        return await sendPushNotification(organization_id, notification);
+    };
+
     return (
         <ClinicRequestContext.Provider value={{ getRequestById, createRequest, updateRequest, getAllRequests, deleteRequest, checkPatientByNationality, processPayment, uploadPDF, sendOnlinePayment, getStats,
-        patchRequestStatus, uploadReport, createCaseDetails }}>
+        patchRequestStatus, uploadReport, createCaseDetails, sendPushNotificationToOrg }}>
             {children}
         </ClinicRequestContext.Provider>
     );

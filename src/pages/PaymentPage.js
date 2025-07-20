@@ -20,7 +20,7 @@ import { useClinicRequest } from '../contexts/ClinicRequestContext';
 export default function PaymentPage() {
     const navigate = useNavigate();
     const location = useLocation();
-    const { processPayment, sendOnlinePayment } = useClinicRequest();
+    const { processPayment, sendOnlinePayment, sendPushNotificationToOrg } = useClinicRequest();
 
     const { id } = useParams();
 
@@ -44,6 +44,11 @@ export default function PaymentPage() {
                 payment_type: paymentType,
                 price: Number(price),
             });
+
+            // Send push notification (assume receiver org id is available in location.state)
+            if (location.state?.receiverClinicId) {
+                await sendPushNotificationToOrg(location.state.receiverClinicId, 'A payment has been processed for your organization.');
+            }
 
             if (paymentType === 'online') {
                 // 2. Ensuite, récupérer l'URL de facture MyFatoorah

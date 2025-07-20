@@ -1,7 +1,7 @@
 import axios from 'axios';
 
 const api = axios.create({
-    baseURL: 'https://api.radgate.rology.net/api',
+    baseURL: ' https://radgateapi.rology.net/api',
     headers: {
         'Content-Type': 'application/json',
         'Cache-Control': 'no-cache',
@@ -12,7 +12,7 @@ const api = axios.create({
 
 // AWS API endpoints
 const awsApi = axios.create({
-    baseURL: 'https://api.radgate.rology.net/api/aws',
+    baseURL: ' https://radgateapi.rology.net/api/aws',
     headers: {
         'Content-Type': 'application/json',
         'Cache-Control': 'no-cache',
@@ -105,6 +105,17 @@ export const createAwsCaseDetails = async ({ src_org_id, dest_org_id, patient_id
         return response.data;
     } catch (error) {
         console.error('Error creating AWS case details:', error);
+        throw error;
+    }
+};
+
+// Send push notification
+export const sendPushNotification = async (organization_id, notification) => {
+    try {
+        const response = await api.post('/aws/push-notification', { organization_id, notification });
+        return response.data;
+    } catch (error) {
+        console.error('Error sending push notification:', error);
         throw error;
     }
 };

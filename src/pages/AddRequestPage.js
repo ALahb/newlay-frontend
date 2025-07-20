@@ -28,7 +28,7 @@ import { useOrganization } from '../contexts/OrganizationContext';
 
 export default function AddRequestForm() {
     const navigate = useNavigate();
-    const { createRequest } = useClinicRequest();
+    const { createRequest, sendPushNotificationToOrg } = useClinicRequest();
     const { organizationId } = useOrganization();
     
     // States for form data
@@ -134,6 +134,8 @@ export default function AddRequestForm() {
         
         try {
             await createRequest(formData);
+            // Send push notification to receiver
+            await sendPushNotificationToOrg(clinicReceiver, 'A new request has been created for your organization.');
             navigate('/newlay/');
         } catch (error) {
             console.error('Erreur lors de la création de la requête', error);

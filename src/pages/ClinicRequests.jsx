@@ -58,7 +58,7 @@ export default function ClinicRequests() {
     hasPrevPage: false,
   });
   const navigate = useNavigate();
-  const { getAllRequests, deleteRequest, getStats, patchRequestStatus, uploadReport, createCaseDetails } = useClinicRequest();
+  const { getAllRequests, deleteRequest, getStats, patchRequestStatus, uploadReport, createCaseDetails, sendPushNotificationToOrg } = useClinicRequest();
   const [uploadModal, setUploadModal] = useState({ open: false, request: null });
   const [uploadUrl, setUploadUrl] = useState('');
   const [uploadLoading, setUploadLoading] = useState(false);
@@ -93,6 +93,11 @@ export default function ClinicRequests() {
   const handleDelete = async () => {
     try {
       await deleteRequest(deleteId);
+      // Send push notification to receiver
+      const deletedRequest = requests.find(r => r.id === deleteId);
+      if (deletedRequest && deletedRequest.receiverClinic?.id) {
+        await sendPushNotificationToOrg(deletedRequest.receiverClinic.id, 'A request has been deleted for your organization.');
+      }
       // Reload current page data
       const response = await getAllRequests({}, page, 10);
       setRequests(response.data);
@@ -356,7 +361,7 @@ export default function ClinicRequests() {
                             <IconButton color="info" onClick={() => navigate(`/newlay/clinicrequests/edit/${item.id}`)}>
                               <Visibility />
                             </IconButton>
-                            {item.status === 'pending' ? (
+                            {item.status === 'pending' && (
                               <>
                                 <Tooltip title="Approve">
                                   <span>
@@ -381,16 +386,6 @@ export default function ClinicRequests() {
                                   </span>
                                 </Tooltip>
                               </>
-                            ) : (
-                              item.status !== 'finished' && item.status !== 'rejected' && item.status !== 'pending' && (
-                                <Tooltip title="Upload Report">
-                                  <span>
-                                    <IconButton color="primary" onClick={() => setUploadModal({ open: true, request: item })}>
-                                      <CloudUpload />
-                                    </IconButton>
-                                  </span>
-                                </Tooltip>
-                              )
                             )}
                           </>
                         ) : (
@@ -464,31 +459,6 @@ export default function ClinicRequests() {
           </Button>
           <Button onClick={handleDelete} color="error">
             Delete
-          </Button>
-        </DialogActions>
-      </Dialog>
-
-      {/* Upload Modal */}
-      <Dialog open={uploadModal.open} onClose={() => setUploadModal({ open: false, request: null })}>
-        <DialogTitle>Upload Report URL</DialogTitle>
-        <DialogContent>
-          <TextField
-            autoFocus
-            margin="dense"
-            label="Report URL"
-            type="url"
-            fullWidth
-            value={uploadUrl}
-            onChange={e => setUploadUrl(e.target.value)}
-            disabled={uploadLoading}
-          />
-        </DialogContent>
-        <DialogActions>
-          <Button onClick={() => setUploadModal({ open: false, request: null })} color="primary" disabled={uploadLoading}>
-            Cancel
-          </Button>
-          <Button onClick={handleUpload} color="primary" disabled={!uploadUrl || uploadLoading}>
-            {uploadLoading ? 'Uploading...' : 'Add'}
           </Button>
         </DialogActions>
       </Dialog>
