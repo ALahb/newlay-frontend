@@ -1,7 +1,7 @@
 import axios from 'axios';
 
 const api = axios.create({
-    baseURL: 'http://api.radgate.rology.net/api',
+    baseURL: 'https://api.radgate.rology.net/api',
     headers: {
         'Content-Type': 'application/json',
         'Cache-Control': 'no-cache',
