@@ -115,13 +115,12 @@ export default function ClinicRequests() {
 
       const link = document.createElement("a");
       link.href = fullUrl;
-      link.download = ""; // le nom du fichier sera pris depuis le serveur
+      link.download = "";
       document.body.appendChild(link);
       link.click();
       document.body.removeChild(link);
     } catch (error) {
       console.error("Erreur lors du téléchargement du PDF :", error);
-      // Optionnel : afficher une notification d'erreur à l'utilisateur
     }
   };
 
@@ -227,28 +226,23 @@ export default function ClinicRequests() {
     }
   };
 
-  // API calls for upload
   const handleUpload = async () => {
     if (!uploadUrl || !uploadModal.request) return;
     setUploadLoading(true);
     try {
-      // 1. Créer le case AWS
       await createCaseDetails({
         src_org_id: uploadModal.request.providerClinic?.id,
         dest_org_id: uploadModal.request.receiverClinic?.id,
         patient_id: uploadModal.request.Patient?.id,
-        radgate_id: uploadModal.request.providerClinic?.id // change if needed
+        radgate_id: uploadModal.request?.id
       });
 
-      // 2. Mettre à jour le statut à 'waiting_for_result'
       await patchRequestStatus(uploadModal.request.id, 'waiting_for_result');
 
-      // 3. Uploader le report (ce qui mettra finished côté backend)
       await uploadReport(uploadModal.request.id, uploadUrl);
 
       setUploadModal({ open: false, request: null });
       setUploadUrl('');
-      // Refresh list
       const response = await getAllRequests({ clinic_provider_id: localStorage.getItem('orgId'), clinic_receiver_id: localStorage.getItem('orgId') }, page, 10);
       setRequests(response.data);
       setPagination(response.pagination);
