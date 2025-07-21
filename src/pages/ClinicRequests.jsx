@@ -64,18 +64,20 @@ export default function ClinicRequests() {
   const [uploadLoading, setUploadLoading] = useState(false);
 
   useEffect(() => {
-    const fetchData = async () => {
-      try {
-        const response = await getAllRequests({ clinic_provider_id: localStorage.getItem('orgId'), clinic_receiver_id: localStorage.getItem('orgId') }, page, 10);
+    const handler = setTimeout(() => {
+      const filtersWithIds = {
+        ...filters,
+        clinic_provider_id: localStorage.getItem('orgId'),
+        clinic_receiver_id: filters.receiverClinic || localStorage.getItem('orgId'),
+      };
+      getAllRequests(filtersWithIds, page, 10).then(response => {
         setRequests(response.data);
         setPagination(response.pagination);
-      } catch (err) {
-        console.error('Erreur lors de la récupération des requêtes', err);
-      }
-    };
+      });
+    }, 500);
 
-    fetchData();
-  }, [getAllRequests, page, filters]);
+    return () => clearTimeout(handler);
+  }, [filters, page, getAllRequests]);
 
   useEffect(() => {
     const fetchStats = async () => {
@@ -160,33 +162,6 @@ export default function ClinicRequests() {
         return <Typography>{status}</Typography>; // fallback: display text
     }
   };
-
-  useEffect(() => {
-    const debouncedFilter = debounce(async () => {
-      try {
-        const trimmedFilters = {
-          startDate: filters.startDate,
-          endDate: filters.endDate,
-          nationalityId: filters.nationalityId.trim(),
-          patientName: filters.patientName?.trim(),
-          clinic_receiver_name: filters.receiverClinic.trim(),
-          clinic_provider_name: filters.providerClinic.trim(),
-          status: filters.status,
-        };
-
-        const response = await getAllRequests(trimmedFilters, 1, 10);
-        setRequests(response.data);
-        setPagination(response.pagination);
-        setPage(1); // Reset to first page when filters change
-      } catch (err) {
-        console.error("Erreur lors de la récupération filtrée :", err);
-      }
-    }, 500);
-
-    debouncedFilter();
-
-    return () => debouncedFilter.cancel();
-  }, [filters, getAllRequests]);
 
   const statuses = [
     { value: '', label: 'Status' },
