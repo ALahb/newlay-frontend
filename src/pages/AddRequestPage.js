@@ -131,6 +131,7 @@ export default function AddRequestForm() {
         formData.append('referral_doctor', referralDoctor);
         formData.append('has_old_study', oldStudy === 'yes' ? 'true' : 'false');
         formData.append('complaint_history', complaint);
+        formData.append('user_id', localStorage.getItem('userId'));
         
         try {
             await createRequest(formData);

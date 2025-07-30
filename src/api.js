@@ -1,7 +1,7 @@
 import axios from 'axios';
 
 const api = axios.create({
-    baseURL: ' https://radgateapi.rology.net/api',
+    baseURL: 'https://radgateapi.rology.net/api',
     headers: {
         'Content-Type': 'application/json',
         'Cache-Control': 'no-cache',
@@ -12,7 +12,7 @@ const api = axios.create({
 
 // AWS API endpoints
 const awsApi = axios.create({
-    baseURL: ' https://radgateapi.rology.net/api/aws',
+    baseURL: 'https://radgateapi.rology.net/api/aws',
     headers: {
         'Content-Type': 'application/json',
         'Cache-Control': 'no-cache',
@@ -99,9 +99,9 @@ export const uploadClinicRequestReport = async (id, url_file) => {
 };
 
 // Create AWS case details
-export const createAwsCaseDetails = async ({ src_org_id, dest_org_id, patient_id, radgate_id }) => {
+export const createAwsCaseDetails = async ({ src_org_id, dest_org_id, patient_id, radgate_id, accession_number }) => {
     try {
-        const response = await api.post('/aws/case-details', { src_org_id, dest_org_id, patient_id, radgate_id });
+        const response = await api.post('/aws/case-details', { src_org_id, dest_org_id, patient_id, radgate_id, accession_number });
         return response.data;
     } catch (error) {
         console.error('Error creating AWS case details:', error);
@@ -110,9 +110,14 @@ export const createAwsCaseDetails = async ({ src_org_id, dest_org_id, patient_id
 };
 
 // Send push notification
-export const sendPushNotification = async (organization_id, notification) => {
+export const sendPushNotification = async (organization_id, notification, userInfo = null) => {
     try {
-        const response = await api.post('/aws/push-notification', { organization_id, notification });
+        const payload = { 
+            organization_id, 
+            notification,
+            user_type: userInfo.type
+        };
+        const response = await api.post('/aws/push-notification', payload);
         return response.data;
     } catch (error) {
         console.error('Error sending push notification:', error);

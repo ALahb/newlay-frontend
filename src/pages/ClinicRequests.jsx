@@ -21,13 +21,11 @@ import {
   MenuItem,
   Box,
   Pagination,
-  Grid,
   DialogContent,
 } from '@mui/material';
-import { Visibility, Delete, AttachMoneyOutlined, HourglassEmpty, Cancel, MedicalServices, CheckCircle, PictureAsPdf, CloudUpload } from '@mui/icons-material';
+import { Visibility, Delete, AttachMoneyOutlined, HourglassEmpty, Cancel, MedicalServices, CheckCircle, PictureAsPdf, Add } from '@mui/icons-material';
 import { useNavigate } from 'react-router-dom';
-import { useClinicRequest } from '../contexts/ClinicRequestContext'; // Assure-toi du bon chemin
-import debounce from 'lodash.debounce';
+import { useClinicRequest } from '../contexts/ClinicRequestContext';
 import DashboardStats from '../components/DashboardStats';
 
 export default function ClinicRequests() {
@@ -62,6 +60,9 @@ export default function ClinicRequests() {
   const [uploadModal, setUploadModal] = useState({ open: false, request: null });
   const [uploadUrl, setUploadUrl] = useState('');
   const [uploadLoading, setUploadLoading] = useState(false);
+  const [accessionNumberModal, setAccessionNumberModal] = useState({ open: false, request: null });
+  const [accessionNumber, setAccessionNumber] = useState('');
+  const [accessionNumberLoading, setAccessionNumberLoading] = useState(false);
 
   useEffect(() => {
     const handler = setTimeout(() => {
@@ -95,19 +96,16 @@ export default function ClinicRequests() {
   const handleDelete = async () => {
     try {
       await deleteRequest(deleteId);
-      // Send push notification to receiver
       const deletedRequest = requests.find(r => r.id === deleteId);
       if (deletedRequest && deletedRequest.receiverClinic?.id) {
         await sendPushNotificationToOrg(deletedRequest.receiverClinic.id, 'A request has been deleted for your organization.');
       }
-      // Reload current page data
       const response = await getAllRequests({}, page, 10);
       setRequests(response.data);
       setPagination(response.pagination);
       setDeleteId(null);
     } catch (error) {
       console.error("Erreur lors de la suppression :", error);
-      // Tu peux afficher une notification d'erreur ici
     }
   };
 
@@ -159,7 +157,7 @@ export default function ClinicRequests() {
           </Tooltip>
         );
       default:
-        return <Typography>{status}</Typography>; // fallback: display text
+        return <Typography>{status}</Typography>;
     }
   };
 
@@ -180,7 +178,6 @@ export default function ClinicRequests() {
   const handleApprove = async (id) => {
     try {
       await patchRequestStatus(id, 'waiting_for_payment');
-      // Refresh list
       const response = await getAllRequests({ clinic_provider_id: localStorage.getItem('orgId'), clinic_receiver_id: localStorage.getItem('orgId') }, page, 10);
       setRequests(response.data);
       setPagination(response.pagination);
@@ -192,12 +189,30 @@ export default function ClinicRequests() {
   const handleDecline = async (id) => {
     try {
       await patchRequestStatus(id, 'rejected');
-      // Refresh list
       const response = await getAllRequests({ clinic_provider_id: localStorage.getItem('orgId'), clinic_receiver_id: localStorage.getItem('orgId') }, page, 10);
       setRequests(response.data);
       setPagination(response.pagination);
     } catch (error) {
       alert('Erreur lors du refus');
+    }
+  };
+
+  const handleAccessionNumber = async () => {
+    setAccessionNumberLoading(true);
+    try {
+      await createCaseDetails({
+        accession_number: accessionNumber,
+        src_org_id: accessionNumberModal.request.providerClinic?.id,
+        dest_org_id: accessionNumberModal.request.receiverClinic?.id,
+        patient_id: accessionNumberModal.request.Patient?.id,
+        radgate_id: accessionNumberModal.request?.id
+      });
+    } catch (error) {
+      console.log(error);
+      alert('Erreur lors de l\'ajout du numéro d\'accès');
+    } finally { 
+      setAccessionNumberLoading(false);
+      setAccessionNumberModal({ open: false, request: null });
     }
   };
 
@@ -239,7 +254,6 @@ export default function ClinicRequests() {
           nbProviders={stats.total_clinic_providers}
         />
 
-        {/* Filters */}
         <Box
           sx={{
             display: 'flex',
@@ -268,7 +282,6 @@ export default function ClinicRequests() {
             />
           ))}
 
-          {/* Status Select */}
           <TextField
             select
             label="Status"
@@ -288,7 +301,6 @@ export default function ClinicRequests() {
 
       </Box>
 
-      {/* Table Card */}
       <Card>
         <CardHeader
           title="Requests List"
@@ -356,6 +368,17 @@ export default function ClinicRequests() {
                                 </Tooltip>
                               </>
                             )}
+                            {
+                              item.status === 'ready_for_examination' && (
+                                <Tooltip title="Add Accession Number">
+                                  <span>
+                                    <IconButton color="primary" onClick={() => setAccessionNumberModal({ open: true, request: item })}>
+                                      <Add />
+                                    </IconButton>
+                                  </span>
+                                </Tooltip>
+                              )}
+                            
                           </>
                         ) : (
                           <>
@@ -369,6 +392,7 @@ export default function ClinicRequests() {
                                 </IconButton>
                               </Tooltip>
                             )}
+
                             <IconButton color="error" onClick={() => setDeleteId(item.id)}>
                               <Delete />
                             </IconButton>
@@ -391,7 +415,6 @@ export default function ClinicRequests() {
         </CardContent>
       </Card>
 
-      {/* Pagination Controls */}
       {requests.length > 0 && (
         <Box
           sx={{
@@ -419,7 +442,6 @@ export default function ClinicRequests() {
         </Box>
       )}
 
-      {/* Delete Dialog */}
       <Dialog open={deleteId !== null} onClose={() => setDeleteId(null)}>
         <DialogTitle>Are you sure you want to delete this request?</DialogTitle>
         <DialogActions>
@@ -428,6 +450,31 @@ export default function ClinicRequests() {
           </Button>
           <Button onClick={handleDelete} color="error">
             Delete
+          </Button>
+        </DialogActions>
+      </Dialog>
+
+
+      <Dialog open={accessionNumberModal.open} onClose={() => setAccessionNumberModal({ open: false, request: null })}>
+        <DialogTitle>Accession Number</DialogTitle>
+        <DialogContent>
+          <TextField
+            autoFocus
+            margin="dense"
+            label="Accession Number"
+            type="text"
+            fullWidth
+            value={accessionNumber}
+            onChange={e => setAccessionNumber(e.target.value)}
+            disabled={accessionNumberLoading}
+          />
+        </DialogContent>
+        <DialogActions>
+          <Button onClick={() => setAccessionNumberModal({ open: false, request: null })} color="primary" disabled={accessionNumberLoading}>
+            Cancel
+          </Button>
+          <Button onClick={handleAccessionNumber} color="primary" disabled={!accessionNumber || accessionNumberLoading}>
+            {accessionNumberLoading ? 'Adding...' : 'Add'}
           </Button>
         </DialogActions>
       </Dialog>

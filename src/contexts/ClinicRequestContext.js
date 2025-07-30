@@ -1,12 +1,16 @@
-import React, { createContext, useContext } from 'react';
+import React, { createContext, useContext, useEffect, useState } from 'react';
 import api from '../api';
 import { updateClinicRequestStatus, uploadClinicRequestReport, createAwsCaseDetails, sendPushNotification } from '../api';
+import { useUser } from './UserContext';
+import { getUrlParams } from '../utils/urlParams';
 
+const { userId, organizationId } = getUrlParams();
+console.log(userId, organizationId);
 const ClinicRequestContext = createContext();
 
 export const ClinicRequestProvider = ({ children }) => {
+    const { user } = useUser();
 
-    // Méthode GET pour toutes les requêtes
     const getAllRequests = async (filters = {}, page = 1, limit = 5) => {
         try {
             const params = new URLSearchParams();
@@ -21,19 +25,17 @@ export const ClinicRequestProvider = ({ children }) => {
             if (filters.clinic_provider_name) params.append('clinic_provider_name', filters.clinic_provider_name);
             if (filters.status) params.append('status', filters.status);
             
-            // Add pagination parameters
             params.append('page', page);
             params.append('limit', limit);
 
             const res = await api.get(`/clinic-requests?${params.toString()}`);
-            return res.data; // Returns { data: [...], pagination: {...} }
+            return res.data;
         } catch (error) {
             console.error("Erreur lors de la récupération des requêtes :", error);
             throw error;
         }
     };
 
-    // Méthode GET pour une seule requête
     const getRequestById = async (id) => {
         try {
             const res = await api.get(`/clinic-requests/${id}`);
@@ -53,7 +55,6 @@ export const ClinicRequestProvider = ({ children }) => {
             throw error;
         }
     };
-    // Méthode POST (ex: création)
     const createRequest = async (data) => {
         try {
             const res = await api.post('/clinic-requests', data);
@@ -64,7 +65,6 @@ export const ClinicRequestProvider = ({ children }) => {
         }
     };
 
-    // Méthode PUT (ex: mise à jour)
     const updateRequest = async (id, data) => {
         try {
             const res = await api.put(`/clinic-requests/${id}`, data);
@@ -110,7 +110,7 @@ export const ClinicRequestProvider = ({ children }) => {
                     'Content-Type': 'multipart/form-data',
                 },
             });
-            return res.data; // assume it returns the file URL or path
+            return res.data;
         } catch (error) {
             console.error("Erreur lors de l'upload du PDF :", error);
             throw error;
@@ -120,30 +120,27 @@ export const ClinicRequestProvider = ({ children }) => {
     const sendOnlinePayment = async (id) => {
         try {
             const res = await api.post('/payment/send-payment', { clinicRequestId: id });
-            return res.data; // { invoiceUrl, invoiceId, etc. }
+            return res.data;
         } catch (error) {
             console.error("Erreur lors de l'envoi du paiement en ligne :", error);
             throw error;
         }
     };
 
-    // Méthode PATCH pour mettre à jour le statut d'une requête
     const patchRequestStatus = async (id, status) => {
         return await updateClinicRequestStatus(id, status);
     };
 
-    // Upload report file
     const uploadReport = async (id, url_file) => {
         return await uploadClinicRequestReport(id, url_file);
     };
-    // Create AWS case details
     const createCaseDetails = async (params) => {
         return await createAwsCaseDetails(params);
     };
 
-    // Send push notification
     const sendPushNotificationToOrg = async (organization_id, notification) => {
-        return await sendPushNotification(organization_id, notification);
+        const userInfo = user?.message?.user || null;
+        return await sendPushNotification(organization_id, notification, userInfo);
     };
 
     return (
@@ -154,5 +151,4 @@ export const ClinicRequestProvider = ({ children }) => {
     );
 };
 
-// Hook personnalisé
 export const useClinicRequest = () => useContext(ClinicRequestContext);

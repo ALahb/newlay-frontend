@@ -1,5 +1,6 @@
 import React, { createContext, useContext, useState, useEffect } from 'react';
 import { useSearchParams } from 'react-router-dom';
+import { getUrlParams } from '../utils/urlParams';
 
 const OrganizationContext = createContext();
 
@@ -8,7 +9,6 @@ export function OrganizationProvider({ children }) {
   const orgIdFromUrl = searchParams.get('organizationId');
   const [organizationId, setOrganizationId] = useState(orgIdFromUrl || '');
 
-  // If orgId is present in URL, update context (only on first load)
   useEffect(() => {
     if (orgIdFromUrl) {
       setOrganizationId(orgIdFromUrl);
@@ -16,6 +16,16 @@ export function OrganizationProvider({ children }) {
     }
     // eslint-disable-next-line
   }, [orgIdFromUrl]);
+
+  useEffect(() => {
+    const { organizationId: orgIdFromParams } = getUrlParams();
+    
+    if (orgIdFromParams && !organizationId) {
+      console.log('Auto-setting organization ID from URL params:', orgIdFromParams);
+      setOrganizationId(orgIdFromParams);
+      localStorage.setItem('orgId', orgIdFromParams);
+    }
+  }, [organizationId]);
 
   return (
     <OrganizationContext.Provider value={{ organizationId, setOrganizationId }}>
