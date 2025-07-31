@@ -47,7 +47,7 @@ export default function PaymentPage() {
 
             // Send push notification (assume receiver org id is available in location.state)
             if (location.state?.receiverClinicId) {
-                await sendPushNotificationToOrg(location.state.receiverClinicId, 'A payment has been processed for your organization.');
+                await sendPushNotificationToOrg(location.state.receiverClinicId, 'A payment has been processed for your organization.', id);
             }
 
             if (paymentType === 'online') {

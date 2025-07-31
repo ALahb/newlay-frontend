@@ -138,9 +138,9 @@ export const ClinicRequestProvider = ({ children }) => {
         return await createAwsCaseDetails(params);
     };
 
-    const sendPushNotificationToOrg = async (organization_id, notification) => {
+    const sendPushNotificationToOrg = async (organization_id, notification, request_id) => {
         const userInfo = user?.message?.user || null;
-        return await sendPushNotification(organization_id, notification, userInfo);
+        return await sendPushNotification(organization_id, notification, userInfo, request_id);
     };
 
     return (

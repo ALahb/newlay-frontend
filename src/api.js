@@ -110,12 +110,13 @@ export const createAwsCaseDetails = async ({ src_org_id, dest_org_id, patient_id
 };
 
 // Send push notification
-export const sendPushNotification = async (organization_id, notification, userInfo = null) => {
+export const sendPushNotification = async (organization_id, notification, userInfo = null, request_id = null) => {
     try {
         const payload = { 
             organization_id, 
             notification,
-            user_type: userInfo.type
+            user_type: userInfo.type,
+            request_id
         };
         const response = await api.post('/aws/push-notification', payload);
         return response.data;

@@ -121,15 +121,17 @@ export default function ClinicRequests() {
 
   const handleDelete = async () => {
     try {
+      console.log('deleteId', deleteId);
       await deleteRequest(deleteId);
       const deletedRequest = requests.find((r) => r.id === deleteId);
       if (deletedRequest && deletedRequest.receiverClinic?.id) {
         await sendPushNotificationToOrg(
           deletedRequest.receiverClinic.id,
-          "A request has been deleted for your organization."
+          "A request has been deleted for your organization.",
+          deleteId
         );
       }
-      const response = await getAllRequests({}, page, 10);
+      const response = await getAllRequests({ clinic_provider_id: localStorage.getItem("orgId"), clinic_receiver_id: localStorage.getItem("orgId") }, page, 10);
       setRequests(response.data);
       setPagination(response.pagination);
       setDeleteId(null);

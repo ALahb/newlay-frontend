@@ -151,8 +151,10 @@ export default function AddRequestForm() {
         formData.append('user_id', localStorage.getItem('userId'));
         
         try {
-            await createRequest(formData);
-            await sendPushNotificationToOrg(clinicReceiver, 'A new request has been created for your organization.');
+            const response = await createRequest(formData);
+            console.log('response', response);
+            
+            await sendPushNotificationToOrg(clinicReceiver, 'A new request has been created for your organizationof regarding patient ' + fullName, response?.id);
             navigate('/newlay/');
         } catch (error) {
             console.error('Erreur lors de la création de la requête', error);
