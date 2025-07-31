@@ -1,4 +1,4 @@
-import React, { useEffect, useState } from 'react';
+import React, { useEffect, useState } from "react";
 import {
   Card,
   CardContent,
@@ -22,22 +22,33 @@ import {
   Box,
   Pagination,
   DialogContent,
-} from '@mui/material';
-import { Visibility, Delete, AttachMoneyOutlined, HourglassEmpty, Cancel, MedicalServices, CheckCircle, PictureAsPdf, Add } from '@mui/icons-material';
-import { useNavigate } from 'react-router-dom';
-import { useClinicRequest } from '../contexts/ClinicRequestContext';
-import DashboardStats from '../components/DashboardStats';
+} from "@mui/material";
+import {
+  Visibility,
+  Delete,
+  AttachMoneyOutlined,
+  HourglassEmpty,
+  Cancel,
+  MedicalServices,
+  CheckCircle,
+  PictureAsPdf,
+  Add,
+  WorkHistory,
+} from "@mui/icons-material";
+import { useNavigate } from "react-router-dom";
+import { useClinicRequest } from "../contexts/ClinicRequestContext";
+import DashboardStats from "../components/DashboardStats";
 
 export default function ClinicRequests() {
   const [requests, setRequests] = useState([]);
   const [deleteId, setDeleteId] = useState(null);
   const [filters, setFilters] = useState({
-    startDate: '',
-    endDate: '',
-    nationalityId: '',
-    providerClinic: '',
-    receiverClinic: '',
-    status: '',
+    startDate: "",
+    endDate: "",
+    nationalityId: "",
+    providerClinic: "",
+    receiverClinic: "",
+    status: "",
   });
   const [stats, setStats] = useState({
     total_requests: 0,
@@ -56,22 +67,37 @@ export default function ClinicRequests() {
     hasPrevPage: false,
   });
   const navigate = useNavigate();
-  const { getAllRequests, deleteRequest, getStats, patchRequestStatus, uploadReport, createCaseDetails, sendPushNotificationToOrg } = useClinicRequest();
-  const [uploadModal, setUploadModal] = useState({ open: false, request: null });
-  const [uploadUrl, setUploadUrl] = useState('');
+  const {
+    getAllRequests,
+    deleteRequest,
+    getStats,
+    patchRequestStatus,
+    uploadReport,
+    createCaseDetails,
+    sendPushNotificationToOrg,
+  } = useClinicRequest();
+  const [uploadModal, setUploadModal] = useState({
+    open: false,
+    request: null,
+  });
+  const [uploadUrl, setUploadUrl] = useState("");
   const [uploadLoading, setUploadLoading] = useState(false);
-  const [accessionNumberModal, setAccessionNumberModal] = useState({ open: false, request: null });
-  const [accessionNumber, setAccessionNumber] = useState('');
+  const [accessionNumberModal, setAccessionNumberModal] = useState({
+    open: false,
+    request: null,
+  });
+  const [accessionNumber, setAccessionNumber] = useState("");
   const [accessionNumberLoading, setAccessionNumberLoading] = useState(false);
 
   useEffect(() => {
     const handler = setTimeout(() => {
       const filtersWithIds = {
         ...filters,
-        clinic_provider_id: localStorage.getItem('orgId'),
-        clinic_receiver_id: filters.receiverClinic || localStorage.getItem('orgId'),
+        clinic_provider_id: localStorage.getItem("orgId"),
+        clinic_receiver_id:
+          filters.receiverClinic || localStorage.getItem("orgId"),
       };
-      getAllRequests(filtersWithIds, page, 10).then(response => {
+      getAllRequests(filtersWithIds, page, 10).then((response) => {
         setRequests(response.data);
         setPagination(response.pagination);
       });
@@ -96,9 +122,12 @@ export default function ClinicRequests() {
   const handleDelete = async () => {
     try {
       await deleteRequest(deleteId);
-      const deletedRequest = requests.find(r => r.id === deleteId);
+      const deletedRequest = requests.find((r) => r.id === deleteId);
       if (deletedRequest && deletedRequest.receiverClinic?.id) {
-        await sendPushNotificationToOrg(deletedRequest.receiverClinic.id, 'A request has been deleted for your organization.');
+        await sendPushNotificationToOrg(
+          deletedRequest.receiverClinic.id,
+          "A request has been deleted for your organization."
+        );
       }
       const response = await getAllRequests({}, page, 10);
       setRequests(response.data);
@@ -126,31 +155,37 @@ export default function ClinicRequests() {
 
   const renderStatusIcon = (status) => {
     switch (status?.toLowerCase()) {
-      case 'pending':
+      case "pending":
         return (
           <Tooltip title="Pending">
             <HourglassEmpty color="warning" />
           </Tooltip>
         );
-      case 'rejected':
+      case "rejected":
         return (
           <Tooltip title="Rejected">
             <Cancel color="error" />
           </Tooltip>
         );
-      case 'waiting_for_payment':
+      case "waiting_for_payment":
         return (
           <Tooltip title="Waiting for Payment">
             <AttachMoneyOutlined color="secondary" />
           </Tooltip>
         );
-      case 'ready_for_examination':
+      case "ready_for_examination":
         return (
           <Tooltip title="Ready for Examination">
             <MedicalServices color="success" />
           </Tooltip>
         );
-      case 'finished':
+      case "waiting_for_result":
+        return (
+          <Tooltip title="Waiting for Result">
+            <WorkHistory color="warning" />
+          </Tooltip>
+        );
+      case "finished":
         return (
           <Tooltip title="Finished">
             <CheckCircle color="primary" />
@@ -162,13 +197,13 @@ export default function ClinicRequests() {
   };
 
   const statuses = [
-    { value: '', label: 'Status' },
-    { value: 'pending', label: 'Pending' },
-    { value: 'rejected', label: 'Rejected' },
-    { value: 'waiting_for_payment', label: 'Waiting for Payment' },
-    { value: 'ready_for_examination', label: 'Ready for Examination' },
-    { value: 'waiting_for_result', label: 'Waiting for Result' },
-    { value: 'finished', label: 'Finished' },
+    { value: "", label: "Status" },
+    { value: "pending", label: "Pending" },
+    { value: "rejected", label: "Rejected" },
+    { value: "waiting_for_payment", label: "Waiting for Payment" },
+    { value: "ready_for_examination", label: "Ready for Examination" },
+    { value: "waiting_for_result", label: "Waiting for Result" },
+    { value: "finished", label: "Finished" },
   ];
 
   const handlePageChange = (event, newPage) => {
@@ -177,23 +212,37 @@ export default function ClinicRequests() {
 
   const handleApprove = async (id) => {
     try {
-      await patchRequestStatus(id, 'waiting_for_payment');
-      const response = await getAllRequests({ clinic_provider_id: localStorage.getItem('orgId'), clinic_receiver_id: localStorage.getItem('orgId') }, page, 10);
+      await patchRequestStatus(id, "waiting_for_payment");
+      const response = await getAllRequests(
+        {
+          clinic_provider_id: localStorage.getItem("orgId"),
+          clinic_receiver_id: localStorage.getItem("orgId"),
+        },
+        page,
+        10
+      );
       setRequests(response.data);
       setPagination(response.pagination);
     } catch (error) {
-      alert('Erreur lors de l\'approbation');
+      alert("Erreur lors de l'approbation");
     }
   };
 
   const handleDecline = async (id) => {
     try {
-      await patchRequestStatus(id, 'rejected');
-      const response = await getAllRequests({ clinic_provider_id: localStorage.getItem('orgId'), clinic_receiver_id: localStorage.getItem('orgId') }, page, 10);
+      await patchRequestStatus(id, "rejected");
+      const response = await getAllRequests(
+        {
+          clinic_provider_id: localStorage.getItem("orgId"),
+          clinic_receiver_id: localStorage.getItem("orgId"),
+        },
+        page,
+        10
+      );
       setRequests(response.data);
       setPagination(response.pagination);
     } catch (error) {
-      alert('Erreur lors du refus');
+      alert("Erreur lors du refus");
     }
   };
 
@@ -205,12 +254,12 @@ export default function ClinicRequests() {
         src_org_id: accessionNumberModal.request.providerClinic?.id,
         dest_org_id: accessionNumberModal.request.receiverClinic?.id,
         patient_id: accessionNumberModal.request.Patient?.id,
-        radgate_id: accessionNumberModal.request?.id
+        radgate_id: accessionNumberModal.request?.id,
       });
     } catch (error) {
       console.log(error);
-      alert('Erreur lors de l\'ajout du numéro d\'accès');
-    } finally { 
+      alert("Erreur lors de l'ajout du numéro d'accès");
+    } finally {
       setAccessionNumberLoading(false);
       setAccessionNumberModal({ open: false, request: null });
     }
@@ -224,20 +273,27 @@ export default function ClinicRequests() {
         src_org_id: uploadModal.request.providerClinic?.id,
         dest_org_id: uploadModal.request.receiverClinic?.id,
         patient_id: uploadModal.request.Patient?.id,
-        radgate_id: uploadModal.request?.id
+        radgate_id: uploadModal.request?.id,
       });
 
-      await patchRequestStatus(uploadModal.request.id, 'waiting_for_result');
+      await patchRequestStatus(uploadModal.request.id, "waiting_for_result");
 
       await uploadReport(uploadModal.request.id, uploadUrl);
 
       setUploadModal({ open: false, request: null });
-      setUploadUrl('');
-      const response = await getAllRequests({ clinic_provider_id: localStorage.getItem('orgId'), clinic_receiver_id: localStorage.getItem('orgId') }, page, 10);
+      setUploadUrl("");
+      const response = await getAllRequests(
+        {
+          clinic_provider_id: localStorage.getItem("orgId"),
+          clinic_receiver_id: localStorage.getItem("orgId"),
+        },
+        page,
+        10
+      );
       setRequests(response.data);
       setPagination(response.pagination);
     } catch (error) {
-      alert('Erreur lors de l\'upload');
+      alert("Erreur lors de l'upload");
     } finally {
       setUploadLoading(false);
     }
@@ -245,7 +301,15 @@ export default function ClinicRequests() {
 
   return (
     <>
-      <Box sx={{ display: 'flex', flexDirection: 'column', gap: 3, mb: 3, width: '100%' }}>
+      <Box
+        sx={{
+          display: "flex",
+          flexDirection: "column",
+          gap: 3,
+          mb: 3,
+          width: "100%",
+        }}
+      >
         <DashboardStats
           totalRequests={stats.total_requests}
           totalRequestsProgress={stats.in_progress_requests}
@@ -256,39 +320,63 @@ export default function ClinicRequests() {
 
         <Box
           sx={{
-            display: 'flex',
-            flexWrap: 'wrap',
-            flexDirection: { xs: 'column', md: 'row' },
+            display: "flex",
+            flexWrap: "wrap",
+            flexDirection: { xs: "column", md: "row" },
             gap: 2,
             mb: 2,
           }}
         >
           {[
-            { label: 'Start Date', type: 'date', value: filters.startDate, key: 'startDate' },
-            { label: 'End Date', type: 'date', value: filters.endDate, key: 'endDate' },
-            { label: 'Nationality ID', value: filters.nationalityId, key: 'nationalityId' },
-            { label: 'Receiver Clinic', value: filters.receiverClinic, key: 'receiverClinic' },
-            { label: 'Provider Clinic', value: filters.providerClinic, key: 'providerClinic' }
+            {
+              label: "Start Date",
+              type: "date",
+              value: filters.startDate,
+              key: "startDate",
+            },
+            {
+              label: "End Date",
+              type: "date",
+              value: filters.endDate,
+              key: "endDate",
+            },
+            {
+              label: "Nationality ID",
+              value: filters.nationalityId,
+              key: "nationalityId",
+            },
+            {
+              label: "Receiver Clinic",
+              value: filters.receiverClinic,
+              key: "receiverClinic",
+            },
+            {
+              label: "Provider Clinic",
+              value: filters.providerClinic,
+              key: "providerClinic",
+            },
           ].map(({ label, type, value, key }) => (
             <TextField
               key={key}
               label={label}
-              type={type || 'text'}
-              InputLabelProps={type === 'date' ? { shrink: true } : undefined}
+              type={type || "text"}
+              InputLabelProps={type === "date" ? { shrink: true } : undefined}
               value={value}
-              onChange={(e) => setFilters({ ...filters, [key]: e.target.value })}
+              onChange={(e) =>
+                setFilters({ ...filters, [key]: e.target.value })
+              }
               fullWidth
-              sx={{ flex: { md: '1 1 200px', lg: '1 1 250px' } }}
+              sx={{ flex: { md: "1 1 200px", lg: "1 1 250px" } }}
             />
           ))}
 
           <TextField
             select
             label="Status"
-            value={filters.status || ''}
+            value={filters.status || ""}
             onChange={(e) => setFilters({ ...filters, status: e.target.value })}
             fullWidth
-            sx={{ flex: { md: '1 1 200px', lg: '1 1 250px' } }}
+            sx={{ flex: { md: "1 1 200px", lg: "1 1 250px" } }}
           >
             {statuses.map((option) => (
               <MenuItem key={option.value} value={option.value}>
@@ -297,15 +385,17 @@ export default function ClinicRequests() {
             ))}
           </TextField>
         </Box>
-
-
       </Box>
 
       <Card>
         <CardHeader
           title="Requests List"
           action={
-            <Button variant="contained" color="primary" onClick={() => navigate('/newlay/clinicrequests/add')}>
+            <Button
+              variant="contained"
+              color="primary"
+              onClick={() => navigate("/newlay/clinicrequests/add")}
+            >
               Add Request
             </Button>
           }
@@ -314,7 +404,7 @@ export default function ClinicRequests() {
           {requests.length === 0 ? (
             <Typography color="error">Empty list</Typography>
           ) : (
-            <TableContainer component={Paper} sx={{ overflowX: 'auto' }}>
+            <TableContainer component={Paper} sx={{ overflowX: "auto" }}>
               <Table size="small">
                 <TableHead>
                   <TableRow>
@@ -328,86 +418,125 @@ export default function ClinicRequests() {
                   </TableRow>
                 </TableHead>
                 <TableBody>
-                  {requests.slice().reverse().map((item, index) => (
-                    <TableRow key={item.id}>
-                      <TableCell>{index + 1}</TableCell>
-                      <TableCell>{item.Patient?.full_name}</TableCell>
-                      <TableCell>{item.Patient?.nationality_id}</TableCell>
-                      <TableCell>{item?.receiverClinic?.name}</TableCell>
-                      <TableCell>{item?.providerClinic?.name}</TableCell>
-                      <TableCell>{renderStatusIcon(item.status)}</TableCell>
-                      <TableCell>
-                        {String(item?.receiverClinic?.id) === String(localStorage.getItem('orgId')) ? (
-                          <>
-                            <IconButton color="info" onClick={() => navigate(`/newlay/clinicrequests/edit/${item.id}`)}>
-                              <Visibility />
-                            </IconButton>
-                            {item.status === 'pending' && (
-                              <>
-                                <Tooltip title="Approve">
-                                  <span>
-                                    <IconButton
-                                      color="success"
-                                      onClick={() => handleApprove(item.id)}
-                                      disabled={item.status !== 'pending'}
-                                    >
-                                      <CheckCircle />
-                                    </IconButton>
-                                  </span>
-                                </Tooltip>
-                                <Tooltip title="Decline">
-                                  <span>
-                                    <IconButton
-                                      color="error"
-                                      onClick={() => handleDecline(item.id)}
-                                      disabled={item.status !== 'pending'}
-                                    >
-                                      <Cancel />
-                                    </IconButton>
-                                  </span>
-                                </Tooltip>
-                              </>
-                            )}
-                            {
-                              item.status === 'ready_for_examination' && (
+                  {requests
+                    .slice()
+                    .reverse()
+                    .map((item, index) => (
+                      <TableRow key={item.id}>
+                        <TableCell>{index + 1}</TableCell>
+                        <TableCell>{item.Patient?.full_name}</TableCell>
+                        <TableCell>{item.Patient?.nationality_id}</TableCell>
+                        <TableCell>{item?.receiverClinic?.name}</TableCell>
+                        <TableCell>{item?.providerClinic?.name}</TableCell>
+                        <TableCell>{renderStatusIcon(item.status)}</TableCell>
+                        <TableCell>
+                          {String(item?.receiverClinic?.id) ===
+                          String(localStorage.getItem("orgId")) ? (
+                            <>
+                              <IconButton
+                                color="info"
+                                onClick={() =>
+                                  navigate(
+                                    `/newlay/clinicrequests/edit/${item.id}`
+                                  )
+                                }
+                              >
+                                <Visibility />
+                              </IconButton>
+                              {item.status === "pending" && (
+                                <>
+                                  <Tooltip title="Approve">
+                                    <span>
+                                      <IconButton
+                                        color="success"
+                                        onClick={() => handleApprove(item.id)}
+                                        disabled={item.status !== "pending"}
+                                      >
+                                        <CheckCircle />
+                                      </IconButton>
+                                    </span>
+                                  </Tooltip>
+                                  <Tooltip title="Decline">
+                                    <span>
+                                      <IconButton
+                                        color="error"
+                                        onClick={() => handleDecline(item.id)}
+                                        disabled={item.status !== "pending"}
+                                      >
+                                        <Cancel />
+                                      </IconButton>
+                                    </span>
+                                  </Tooltip>
+                                </>
+                              )}
+                              {item.status === "ready_for_examination" && (
                                 <Tooltip title="Add Accession Number">
                                   <span>
-                                    <IconButton color="primary" onClick={() => setAccessionNumberModal({ open: true, request: item })}>
+                                    <IconButton
+                                      color="primary"
+                                      onClick={() =>
+                                        setAccessionNumberModal({
+                                          open: true,
+                                          request: item,
+                                        })
+                                      }
+                                    >
                                       <Add />
                                     </IconButton>
                                   </span>
                                 </Tooltip>
                               )}
-                            
-                          </>
-                        ) : (
-                          <>
-                            <IconButton color="info" onClick={() => navigate(`/newlay/clinicrequests/edit/${item.id}`)}>
-                              <Visibility />
-                            </IconButton>
-                            {item.status === 'waiting_for_payment' && (
-                              <Tooltip title="Proceed to Payment">
-                                <IconButton color="success" onClick={() => navigate(`/newlay/clinicrequests/payment/${item.id}`)}>
-                                  <AttachMoneyOutlined />
-                                </IconButton>
-                              </Tooltip>
-                            )}
+                            </>
+                          ) : (
+                            <>
+                              <IconButton
+                                color="info"
+                                onClick={() =>
+                                  navigate(
+                                    `/newlay/clinicrequests/edit/${item.id}`
+                                  )
+                                }
+                              >
+                                <Visibility />
+                              </IconButton>
+                              {item.status === "waiting_for_payment" && (
+                                <Tooltip title="Proceed to Payment">
+                                  <IconButton
+                                    color="success"
+                                    onClick={() =>
+                                      navigate(
+                                        `/newlay/clinicrequests/payment/${item.id}`
+                                      )
+                                    }
+                                  >
+                                    <AttachMoneyOutlined />
+                                  </IconButton>
+                                </Tooltip>
+                              )}
 
-                            <IconButton color="error" onClick={() => setDeleteId(item.id)}>
-                              <Delete />
-                            </IconButton>
-                            {item.status === 'finished' && (
-                              <Tooltip title="Download PDF">
-                                <IconButton color="primary" onClick={() => handleDownloadPDF(item.report_file)}>
-                                  <PictureAsPdf />
-                                </IconButton>
-                              </Tooltip>
-                            )}
-                          </>
-                        )}
-                      </TableCell>
-                    </TableRow>
-                  ))}
+                              <IconButton
+                                color="error"
+                                onClick={() => setDeleteId(item.id)}
+                              >
+                                <Delete />
+                              </IconButton>
+                              {item.status === "finished" && (
+                                <Tooltip title="Download PDF">
+                                  <IconButton
+                                    color="primary"
+                                    onClick={() =>
+                                      handleDownloadPDF(item.report_file)
+                                    }
+                                  >
+                                    <PictureAsPdf />
+                                  </IconButton>
+                                </Tooltip>
+                              )}
+                            </>
+                          )}
+                        </TableCell>
+                      </TableRow>
+                    ))}
                 </TableBody>
               </Table>
             </TableContainer>
@@ -418,18 +547,22 @@ export default function ClinicRequests() {
       {requests.length > 0 && (
         <Box
           sx={{
-            display: 'flex',
-            flexDirection: { xs: 'column', sm: 'row' },
-            justifyContent: 'space-between',
-            alignItems: 'center',
+            display: "flex",
+            flexDirection: { xs: "column", sm: "row" },
+            justifyContent: "space-between",
+            alignItems: "center",
             mt: 2,
             p: 2,
             gap: 2,
           }}
         >
           <Typography variant="body2" color="textSecondary">
-            Showing {((pagination.currentPage - 1) * pagination.limit) + 1} to{' '}
-            {Math.min(pagination.currentPage * pagination.limit, pagination.totalCount)} of {pagination.totalCount} results
+            Showing {(pagination.currentPage - 1) * pagination.limit + 1} to{" "}
+            {Math.min(
+              pagination.currentPage * pagination.limit,
+              pagination.totalCount
+            )}{" "}
+            of {pagination.totalCount} results
           </Typography>
           <Pagination
             count={pagination.totalPages}
@@ -454,8 +587,10 @@ export default function ClinicRequests() {
         </DialogActions>
       </Dialog>
 
-
-      <Dialog open={accessionNumberModal.open} onClose={() => setAccessionNumberModal({ open: false, request: null })}>
+      <Dialog
+        open={accessionNumberModal.open}
+        onClose={() => setAccessionNumberModal({ open: false, request: null })}
+      >
         <DialogTitle>Accession Number</DialogTitle>
         <DialogContent>
           <TextField
@@ -465,20 +600,29 @@ export default function ClinicRequests() {
             type="text"
             fullWidth
             value={accessionNumber}
-            onChange={e => setAccessionNumber(e.target.value)}
+            onChange={(e) => setAccessionNumber(e.target.value)}
             disabled={accessionNumberLoading}
           />
         </DialogContent>
         <DialogActions>
-          <Button onClick={() => setAccessionNumberModal({ open: false, request: null })} color="primary" disabled={accessionNumberLoading}>
+          <Button
+            onClick={() =>
+              setAccessionNumberModal({ open: false, request: null })
+            }
+            color="primary"
+            disabled={accessionNumberLoading}
+          >
             Cancel
           </Button>
-          <Button onClick={handleAccessionNumber} color="primary" disabled={!accessionNumber || accessionNumberLoading}>
-            {accessionNumberLoading ? 'Adding...' : 'Add'}
+          <Button
+            onClick={handleAccessionNumber}
+            color="primary"
+            disabled={!accessionNumber || accessionNumberLoading}
+          >
+            {accessionNumberLoading ? "Adding..." : "Add"}
           </Button>
         </DialogActions>
       </Dialog>
     </>
-
   );
 }

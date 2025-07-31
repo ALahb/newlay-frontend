@@ -16,8 +16,6 @@ import {
     Button,
     InputLabel,
     OutlinedInput,
-    Chip,
-    Typography,
     CircularProgress,
     Alert,
 } from '@mui/material';
@@ -31,13 +29,13 @@ export default function AddRequestForm() {
     const { createRequest, sendPushNotificationToOrg } = useClinicRequest();
     const { organizationId } = useOrganization();
     
-    // States for form data
     const [fullName, setFullName] = useState('');
     const [nationalityIdInRequest, setNationalityIdInRequest] = useState('');
     const [clinicProvider, setClinicProvider] = useState(organizationId || '');
     const [clinicProviderName, setClinicProviderName] = useState('');
-    const [clinicReceiver, setClinicReceiver] = useState(organizationId || '');
-    const [requestType, setRequestType] = useState([]);
+    const [clinicReceiver, setClinicReceiver] = useState('');
+    // Change requestType to a single value (string)
+    const [requestType, setRequestType] = useState('');
     const [phone, setPhone] = useState('');
     const [birthday, setBirthday] = useState('');
     const [emergency, setEmergency] = useState('yes');
@@ -50,39 +48,59 @@ export default function AddRequestForm() {
     const [oldStudy, setOldStudy] = useState('yes');
     const [complaint, setComplaint] = useState('');
 
-    // States for API data
     const [organizations, setOrganizations] = useState([]);
     const [requestTypes, setRequestTypes] = useState([]);
     const [loading, setLoading] = useState(true);
     const [apiError, setApiError] = useState('');
 
-    // Fetch organizations and request types on component mount
+    // Flattened list of request type options for the select
+    const [requestTypeOptions, setRequestTypeOptions] = useState([]);
+
     useEffect(() => {
         const fetchData = async () => {
             try {
                 setLoading(true);
                 setApiError('');
 
-                // Fetch both organizations and request types in parallel
                 const [orgsResponse, typesResponse] = await Promise.all([
                     getAllOrganizations(),
                     getAllModalityRequestTypes()
                 ]);
 
-                // Set organizations data
+                const providerId = organizationId || localStorage.getItem('orgId');
+
                 if (orgsResponse && orgsResponse.data) {
-                    setOrganizations(orgsResponse.message.data.result);
+                    const allOrgs = orgsResponse.message.data.result;
+                    const filteredOrgs = allOrgs.filter(
+                        org => org._id !== providerId
+                    );
+                    setOrganizations(filteredOrgs);
                 } else {
                     console.warn('Organizations response format unexpected:', orgsResponse);
                     setOrganizations([]);
                 }
 
-                // Set request types data
                 if (typesResponse && typesResponse.data) {
-                    setRequestTypes(typesResponse.message.data.result);
+                    const types = typesResponse.message.data.result;
+                    setRequestTypes(types);
+
+                    // Flatten the request types for the select
+                    const options = [];
+                    types.forEach((modalityObj) => {
+                        if (modalityObj.request_types && Array.isArray(modalityObj.request_types)) {
+                            modalityObj.request_types.forEach((rt) => {
+                                options.push({
+                                    value: rt.value,
+                                    label: `${modalityObj.modality} - ${rt.name}`,
+                                });
+                            });
+                        }
+                    });
+                    setRequestTypeOptions(options);
                 } else {
                     console.warn('Request types response format unexpected:', typesResponse);
                     setRequestTypes([]);
+                    setRequestTypeOptions([]);
                 }
 
             } catch (err) {
@@ -94,9 +112,8 @@ export default function AddRequestForm() {
         };
 
         fetchData();
-    }, []);
+    }, [organizationId]);
 
-    // If organizationId changes (e.g. on navigation), update clinic
     useEffect(() => {
         if (organizationId || localStorage.getItem('orgId')) {
             setClinicProvider(organizationId || localStorage.getItem('orgId'));
@@ -105,7 +122,6 @@ export default function AddRequestForm() {
         getOrganizationDetails(organizationId || localStorage.getItem('orgId')).then(res => {
             setClinicProviderName(res.message?.organization?.name);
             console.log('clinicProviderName', res.message?.organization?.name);
-            
         });
     }, [organizationId, localStorage.getItem('orgId')]);
 
@@ -118,7 +134,8 @@ export default function AddRequestForm() {
         formData.append('clinic_receiver_id', clinicReceiver);
         formData.append('clinic_receiver_name', organizations.find(org => org._id === clinicReceiver)?.name || '');
         formData.append('clinic_provider_name', clinicProviderName);
-        formData.append('request_types', JSON.stringify(requestType));
+        // Only submit a single value for request_types
+        formData.append('request_types', requestType);
         formData.append('full_name', fullName);
         formData.append('birthday', birthday);
         formData.append('phone', phone);
@@ -135,7 +152,6 @@ export default function AddRequestForm() {
         
         try {
             await createRequest(formData);
-            // Send push notification to receiver
             await sendPushNotificationToOrg(clinicReceiver, 'A new request has been created for your organization.');
             navigate('/newlay/');
         } catch (error) {
@@ -182,23 +198,16 @@ export default function AddRequestForm() {
                         <InputLabel id="request-type-label">Request Type</InputLabel>
                         <Select
                             labelId="request-type-label"
-                            multiple
                             value={requestType}
                             onChange={(e) => setRequestType(e.target.value)}
                             input={<OutlinedInput label="Request Type" />}
-                            renderValue={(selected) => (
-                                <Box sx={{ display: 'flex', flexWrap: 'wrap', gap: 0.5 }}>
-                                    {selected.map((value) => (
-                                        <Chip key={value} label={value} />
-                                    ))}
-                                </Box>
-                            )}
+                            label="Request Type"
                         >
-                            {requestTypes.map((type) => (
-                                <MenuItem key={type.modality || type} value={type.modality || type}>
-                                    {type.modality || type}
+                            {requestTypeOptions.map((option) => (
+                                <MenuItem key={option.value} value={option.value}>
+                                    {option.label}
                                 </MenuItem>
-                            ))} 
+                            ))}
                         </Select>
                     </FormControl>
 
