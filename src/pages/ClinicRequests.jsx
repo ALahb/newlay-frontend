@@ -22,6 +22,8 @@ import {
   Box,
   Pagination,
   DialogContent,
+  useTheme,
+  Chip,
 } from "@mui/material";
 import {
   Visibility,
@@ -37,9 +39,16 @@ import {
 } from "@mui/icons-material";
 import { useNavigate } from "react-router-dom";
 import { useClinicRequest } from "../contexts/ClinicRequestContext";
+import { useUser } from "../contexts/UserContext";
 import DashboardStats from "../components/DashboardStats";
+import { getUserType, getUserDisplayName } from "../utils/userTheme";
 
 export default function ClinicRequests() {
+  const theme = useTheme();
+  const { user } = useUser();
+  const userType = getUserType(user);
+  const userDisplayName = getUserDisplayName(user);
+  
   const [requests, setRequests] = useState([]);
   const [deleteId, setDeleteId] = useState(null);
   const [filters, setFilters] = useState({
@@ -75,6 +84,7 @@ export default function ClinicRequests() {
     uploadReport,
     createCaseDetails,
     sendPushNotificationToOrg,
+    getReportUrlFromApi,
   } = useClinicRequest();
   const [uploadModal, setUploadModal] = useState({
     open: false,
@@ -87,6 +97,7 @@ export default function ClinicRequests() {
     request: null,
   });
   const [accessionNumber, setAccessionNumber] = useState("");
+  const [patientId, setPatientId] = useState("");
   const [accessionNumberLoading, setAccessionNumberLoading] = useState(false);
 
   useEffect(() => {
@@ -140,9 +151,10 @@ export default function ClinicRequests() {
     }
   };
 
-  const handleDownloadPDF = async (url) => {
+  const handleDownloadPDF = async (url, requestId) => {
     try {
-      const fullUrl = `http://localhost:5000${url}`;
+      const reportUrlData = await getReportUrlFromApi(requestId);
+      const fullUrl = reportUrlData.url || reportUrlData.report_url || url;
 
       const link = document.createElement("a");
       link.href = fullUrl;
@@ -255,15 +267,24 @@ export default function ClinicRequests() {
         accession_number: accessionNumber,
         src_org_id: accessionNumberModal.request.providerClinic?.id,
         dest_org_id: accessionNumberModal.request.receiverClinic?.id,
-        patient_id: accessionNumberModal.request.Patient?.id,
+        patient_id: patientId || accessionNumberModal.request.Patient?.id,
         radgate_id: accessionNumberModal.request?.id,
       });
+      
+      const updatedRequests = requests.map(req => 
+        req.id === accessionNumberModal.request.id 
+          ? { ...req, accession_number_added: true }
+          : req
+      );
+      setRequests(updatedRequests);
     } catch (error) {
       console.log(error);
       alert("Erreur lors de l'ajout du numéro d'accès");
     } finally {
       setAccessionNumberLoading(false);
       setAccessionNumberModal({ open: false, request: null });
+      setAccessionNumber("");
+      setPatientId("");
     }
   };
 
@@ -303,6 +324,40 @@ export default function ClinicRequests() {
 
   return (
     <>
+      {/* User Type Indicator */}
+      {userType && (
+        <Box sx={{ 
+          display: 'flex', 
+          justifyContent: 'space-between', 
+          alignItems: 'center',
+          mb: 2,
+          p: 2,
+          borderRadius: 2,
+          background: `linear-gradient(135deg, ${theme.palette.primary.main}20, ${theme.palette.primary.light}20)`,
+          border: `1px solid ${theme.palette.primary.main}30`
+        }}>
+          <Box>
+            <Typography variant="h6" color="primary" fontWeight="bold">
+              Welcome, {userDisplayName}!
+            </Typography>
+            <Typography variant="body2" color="text.secondary">
+              You're currently in {userType.toLowerCase()} mode
+            </Typography>
+          </Box>
+          <Chip
+            label={userType}
+            color="primary"
+            variant="filled"
+            sx={{
+              background: `linear-gradient(45deg, ${theme.palette.primary.main}, ${theme.palette.primary.light})`,
+              color: 'white',
+              fontWeight: 'bold',
+              textTransform: 'capitalize'
+            }}
+          />
+        </Box>
+      )}
+
       <Box
         sx={{
           display: "flex",
@@ -471,17 +526,18 @@ export default function ClinicRequests() {
                                   </Tooltip>
                                 </>
                               )}
-                              {item.status === "ready_for_examination" && (
+                              {item.status === "ready_for_examination" && !item.accession_number_added && (
                                 <Tooltip title="Add Accession Number">
                                   <span>
                                     <IconButton
                                       color="primary"
-                                      onClick={() =>
+                                      onClick={() => {
                                         setAccessionNumberModal({
                                           open: true,
                                           request: item,
-                                        })
-                                      }
+                                        });
+                                        setPatientId(item.Patient?.id || "");
+                                      }}
                                     >
                                       <Add />
                                     </IconButton>
@@ -527,7 +583,7 @@ export default function ClinicRequests() {
                                   <IconButton
                                     color="primary"
                                     onClick={() =>
-                                      handleDownloadPDF(item.report_file)
+                                      handleDownloadPDF(item.report_file, item.id)
                                     }
                                   >
                                     <PictureAsPdf />
@@ -593,7 +649,7 @@ export default function ClinicRequests() {
         open={accessionNumberModal.open}
         onClose={() => setAccessionNumberModal({ open: false, request: null })}
       >
-        <DialogTitle>Accession Number</DialogTitle>
+        <DialogTitle>Add Accession Number</DialogTitle>
         <DialogContent>
           <TextField
             autoFocus
@@ -604,13 +660,26 @@ export default function ClinicRequests() {
             value={accessionNumber}
             onChange={(e) => setAccessionNumber(e.target.value)}
             disabled={accessionNumberLoading}
+            sx={{ mb: 2 }}
+          />
+          <TextField
+            margin="dense"
+            label="Patient ID"
+            type="text"
+            fullWidth
+            value={patientId}
+            onChange={(e) => setPatientId(e.target.value)}
+            disabled={accessionNumberLoading}
+            placeholder={accessionNumberModal.request?.Patient?.id || "Enter Patient ID"}
           />
         </DialogContent>
         <DialogActions>
           <Button
-            onClick={() =>
-              setAccessionNumberModal({ open: false, request: null })
-            }
+            onClick={() => {
+              setAccessionNumberModal({ open: false, request: null });
+              setAccessionNumber("");
+              setPatientId("");
+            }}
             color="primary"
             disabled={accessionNumberLoading}
           >

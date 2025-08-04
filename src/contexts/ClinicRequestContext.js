@@ -1,6 +1,6 @@
 import React, { createContext, useContext, useEffect, useState } from 'react';
 import api from '../api';
-import { updateClinicRequestStatus, uploadClinicRequestReport, createAwsCaseDetails, sendPushNotification } from '../api';
+import { updateClinicRequestStatus, uploadClinicRequestReport, createAwsCaseDetails, sendPushNotification, getReportUrl } from '../api';
 import { useUser } from './UserContext';
 import { getUrlParams } from '../utils/urlParams';
 
@@ -143,9 +143,13 @@ export const ClinicRequestProvider = ({ children }) => {
         return await sendPushNotification(organization_id, notification, userInfo, request_id);
     };
 
+    const getReportUrlFromApi = async (radgate_id) => {
+        return await getReportUrl(radgate_id);
+    };
+
     return (
         <ClinicRequestContext.Provider value={{ getRequestById, createRequest, updateRequest, getAllRequests, deleteRequest, checkPatientByNationality, processPayment, uploadPDF, sendOnlinePayment, getStats,
-        patchRequestStatus, uploadReport, createCaseDetails, sendPushNotificationToOrg }}>
+        patchRequestStatus, uploadReport, createCaseDetails, sendPushNotificationToOrg, getReportUrlFromApi }}>
             {children}
         </ClinicRequestContext.Provider>
     );
