@@ -109,6 +109,16 @@ export const createAwsCaseDetails = async ({ src_org_id, dest_org_id, patient_id
     }
 };
 
+export const getReportUrl = async (radgate_id) => {
+    try {
+        const response = await awsApi.get(`/report-url?radgate_id=${radgate_id}`);
+        return response.data;
+    } catch (error) {
+        console.error('Error fetching report URL:', error);
+        throw error;
+    }
+};
+
 // Send push notification
 export const sendPushNotification = async (organization_id, notification, userInfo = null, request_id = null) => {
     try {
