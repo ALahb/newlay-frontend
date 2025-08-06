@@ -154,14 +154,22 @@ export default function ClinicRequests() {
   const handleDownloadPDF = async (url, requestId) => {
     try {
       const reportUrlData = await getReportUrlFromApi(requestId);
-      const fullUrl = reportUrlData.url || reportUrlData.report_url || url;
-
-      const link = document.createElement("a");
-      link.href = fullUrl;
-      link.download = "";
-      document.body.appendChild(link);
-      link.click();
-      document.body.removeChild(link);
+      
+      let pdfUrl = null;
+      
+      if (reportUrlData.status === "success" && reportUrlData.message?.data?.report_pdf) {
+        pdfUrl = reportUrlData.message.data.report_pdf;
+      } else if (reportUrlData.url || reportUrlData.report_url) {
+        pdfUrl = reportUrlData.url || reportUrlData.report_url;
+      } else {
+        pdfUrl = url;
+      }
+      
+      if (pdfUrl) {
+        window.open(pdfUrl, '_blank');
+      } else {
+        console.error("No PDF URL found in response");
+      }
     } catch (error) {
       console.error("Erreur lors du téléchargement du PDF :", error);
     }
@@ -579,7 +587,7 @@ export default function ClinicRequests() {
                                 <Delete />
                               </IconButton>
                               {item.status === "finished" && (
-                                <Tooltip title="Download PDF">
+                                <Tooltip title="View PDF Report">
                                   <IconButton
                                     color="primary"
                                     onClick={() =>
