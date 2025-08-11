@@ -55,6 +55,9 @@ export default function AddRequestForm() {
     const [loading, setLoading] = useState(true);
     const [apiError, setApiError] = useState('');
 
+    // Loader for form submission
+    const [submitting, setSubmitting] = useState(false);
+
     // Flattened list of request type options for the select
     const [requestTypeOptions, setRequestTypeOptions] = useState([]);
 
@@ -130,6 +133,8 @@ export default function AddRequestForm() {
     const handleSubmit = async (e) => {
         e.preventDefault();
 
+        setSubmitting(true);
+
         const formData = new FormData();
         formData.append('nationality_id', nationalityIdInRequest);
         formData.append('clinic_provider_id', clinicProvider);
@@ -157,9 +162,12 @@ export default function AddRequestForm() {
             console.log('response', response);
             
             await sendPushNotificationToOrg(clinicReceiver, 'A new request has been created for your organizationof regarding patient ' + fullName, response?.id);
-            navigate('/newlay/');
+            setTimeout(() => {
+                navigate('/newlay/');
+            }, 500);
         } catch (error) {
             console.error('Erreur lors de la création de la requête', error);
+            setSubmitting(false);
         }
     };
 
@@ -204,6 +212,31 @@ export default function AddRequestForm() {
             onSubmit={handleSubmit}
             sx={{ maxWidth: 900, mx: 'auto', mt: 4, mb: 4, px: 2 }}
         >
+            {/* Overlay loader after form submission */}
+            {submitting && (
+                <Box
+                    sx={{
+                        position: 'fixed',
+                        top: 0,
+                        left: 0,
+                        width: '100vw',
+                        height: '100vh',
+                        bgcolor: 'rgba(255,255,255,0.7)',
+                        zIndex: 2000,
+                        display: 'flex',
+                        alignItems: 'center',
+                        justifyContent: 'center'
+                    }}
+                >
+                    <Box display="flex" flexDirection="column" alignItems="center">
+                        <CircularProgress size={60} />
+                        <Box mt={2} fontSize={18} color="text.secondary">
+                            Submitting request...
+                        </Box>
+                    </Box>
+                </Box>
+            )}
+
             {/* Request Details Card */}
             <Card sx={{ mb: 3 }}>
                 <CardHeader title="Request Details" />
@@ -411,8 +444,15 @@ export default function AddRequestForm() {
 
             {/* Submit Button */}
             <Box textAlign="right">
-                <Button variant="contained" color="primary" type="submit" sx={{ px: 5 }}>
-                    Submit
+                <Button
+                    variant="contained"
+                    color="primary"
+                    type="submit"
+                    sx={{ px: 5 }}
+                    disabled={submitting}
+                    startIcon={submitting ? <CircularProgress size={20} color="inherit" /> : null}
+                >
+                    {submitting ? 'Submitting...' : 'Submit'}
                 </Button>
             </Box>
         </Box>
