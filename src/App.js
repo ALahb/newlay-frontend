@@ -10,6 +10,7 @@ import { UserProvider, useUser } from "./contexts/UserContext";
 import PaymentPage from "./pages/PaymentPage";
 import { getOrganizationDetails } from "./api";
 import { getUserTheme, getUserType } from "./utils/userTheme";
+import BreadcrumbsNav from "./components/BreadcrumbsNav";
 
 function ThemedApp() {
   const { user } = useUser();
@@ -80,6 +81,8 @@ function ThemedApp() {
             Clinic Provider : { clinicProviderName }
           </Typography>
         )}
+
+        <BreadcrumbsNav />  
 
         <Routes>
           <Route path="/newlay" element={<ClinicRequests />} />
