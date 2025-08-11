@@ -39,14 +39,15 @@ export default function AddRequestForm() {
     const [requestType, setRequestType] = useState('');
     const [phone, setPhone] = useState('');
     const [birthday, setBirthday] = useState('');
-    const [emergency, setEmergency] = useState('yes');
-    const [ivContrast, setIvContrast] = useState('yes');
-    const [previousOperation, setPreviousOperation] = useState('yes');
+    // Set default to "no" for all radio button states
+    const [emergency, setEmergency] = useState('no');
+    const [ivContrast, setIvContrast] = useState('no');
+    const [previousOperation, setPreviousOperation] = useState('no');
     const [previousOperationNote, setPreviousOperationNote] = useState('');
-    const [receivedMedication, setReceivedMedication] = useState('yes');
+    const [receivedMedication, setReceivedMedication] = useState('no');
     const [receivedMedicationNote, setReceivedMedicationNote] = useState('');
     const [referralDoctor, setReferralDoctor] = useState('');
-    const [oldStudy, setOldStudy] = useState('yes');
+    const [oldStudy, setOldStudy] = useState('no');
     const [complaint, setComplaint] = useState('');
 
     const [organizations, setOrganizations] = useState([]);
