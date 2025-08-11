@@ -18,6 +18,7 @@ import {
     OutlinedInput,
     CircularProgress,
     Alert,
+    Autocomplete
 } from '@mui/material';
 import { useNavigate } from 'react-router-dom';
 import { useClinicRequest } from '../contexts/ClinicRequestContext';
@@ -161,6 +162,16 @@ export default function AddRequestForm() {
         }
     };
 
+    const [requestTypeSearch, setRequestTypeSearch] = useState('');
+    const filteredRequestTypeOptions = requestTypeOptions.filter(option =>
+        option.label.toLowerCase().includes(requestTypeSearch.toLowerCase())
+    );
+
+    const [hospitalSearch, setHospitalSearch] = useState('');
+    const filteredOrganizations = organizations.filter(org =>
+        (org.name || '').toLowerCase().includes(hospitalSearch.toLowerCase())
+    );
+
     if (loading) {
         return (
             <Box display="flex" justifyContent="center" alignItems="center" minHeight="400px">
@@ -196,21 +207,28 @@ export default function AddRequestForm() {
             <Card sx={{ mb: 3 }}>
                 <CardHeader title="Request Details" />
                 <CardContent>
+                    {/* Request Type with search */}
                     <FormControl fullWidth sx={{ mb: 3 }}>
-                        <InputLabel id="request-type-label">Request Type</InputLabel>
-                        <Select
-                            labelId="request-type-label"
-                            value={requestType}
-                            onChange={(e) => setRequestType(e.target.value)}
-                            input={<OutlinedInput label="Request Type" />}
-                            label="Request Type"
-                        >
-                            {requestTypeOptions.map((option) => (
-                                <MenuItem key={option.value} value={option.value}>
-                                    {option.label}
-                                </MenuItem>
-                            ))}
-                        </Select>
+                        <Autocomplete
+                            options={requestTypeOptions}
+                            getOptionLabel={(option) => option.label || ''}
+                            value={requestTypeOptions.find(opt => opt.value === requestType) || null}
+                            onChange={(_, newValue) => setRequestType(newValue ? newValue.value : '')}
+                            renderInput={(params) => (
+                                <TextField
+                                    {...params}
+                                    label="Request Type"
+                                    onChange={e => setRequestTypeSearch(e.target.value)}
+                                    value={requestTypeSearch}
+                                />
+                            )}
+                            isOptionEqualToValue={(option, value) => option.value === value.value}
+                            filterOptions={(options, state) => {
+                                return options.filter(option =>
+                                    option.label.toLowerCase().includes(state.inputValue.toLowerCase())
+                                );
+                            }}
+                        />
                     </FormControl>
 
                     <TextField
@@ -240,20 +258,28 @@ export default function AddRequestForm() {
                         onChange={(e) => setNationalityIdInRequest(e.target.value)}
                     />
 
+                    {/* Hospital with search */}
                     <FormControl fullWidth sx={{ mb: 3 }}>
-                        <InputLabel id="hospital-label">Hospital</InputLabel>
-                        <Select
-                            labelId="hospital-label"
-                            value={clinicReceiver}
-                            onChange={(e) => setClinicReceiver(e.target.value)}
-                            label="Hospital"
-                        >
-                            {organizations.map((org) => (
-                                <MenuItem key={org._id || org} value={org._id || org}>
-                                    {org.name || org}
-                                </MenuItem>
-                            ))}
-                        </Select>
+                        <Autocomplete
+                            options={organizations}
+                            getOptionLabel={(option) => option.name || ''}
+                            value={organizations.find(opt => opt._id === clinicReceiver) || null}
+                            onChange={(_, newValue) => setClinicReceiver(newValue ? newValue._id : '')}
+                            renderInput={(params) => (
+                                <TextField
+                                    {...params}
+                                    label="Hospital"
+                                    onChange={e => setHospitalSearch(e.target.value)}
+                                    value={hospitalSearch}
+                                />
+                            )}
+                            isOptionEqualToValue={(option, value) => option._id === value._id}
+                            filterOptions={(options, state) => {
+                                return options.filter(option =>
+                                    (option.name || '').toLowerCase().includes(state.inputValue.toLowerCase())
+                                );
+                            }}
+                        />
                     </FormControl>
 
                     <TextField
