@@ -40,15 +40,11 @@ export default function PaymentPage() {
             if (!id) throw new Error('No request ID provided');
 
             // 1. Enregistrer le paiement avec type et price
+            // Push notification is now handled automatically in the API
             await processPayment(id, {
                 payment_type: paymentType,
                 price: Number(price),
             });
-
-            // Send push notification (assume receiver org id is available in location.state)
-            if (location.state?.receiverClinicId) {
-                await sendPushNotificationToOrg(location.state.receiverClinicId, 'A payment has been processed for your organization.', id);
-            }
 
             if (paymentType === 'online') {
                 // 2. Ensuite, récupérer l'URL de facture MyFatoorah

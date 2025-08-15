@@ -48,7 +48,7 @@ export default function ClinicRequests() {
   const { user } = useUser();
   const userType = getUserType(user);
   const userDisplayName = getUserDisplayName(user);
-  
+
   const [requests, setRequests] = useState([]);
   const [deleteId, setDeleteId] = useState(null);
   const [filters, setFilters] = useState({
@@ -132,16 +132,8 @@ export default function ClinicRequests() {
 
   const handleDelete = async () => {
     try {
-      console.log('deleteId', deleteId);
+      // Push notification is now handled automatically in the API
       await deleteRequest(deleteId);
-      const deletedRequest = requests.find((r) => r.id === deleteId);
-      if (deletedRequest && deletedRequest.receiverClinic?.id) {
-        await sendPushNotificationToOrg(
-          deletedRequest.receiverClinic.id,
-          "A request has been deleted for your organization.",
-          deleteId
-        );
-      }
       const response = await getAllRequests({ clinic_provider_id: localStorage.getItem("orgId"), clinic_receiver_id: localStorage.getItem("orgId") }, page, 10);
       setRequests(response.data);
       setPagination(response.pagination);
@@ -154,9 +146,9 @@ export default function ClinicRequests() {
   const handleDownloadPDF = async (url, requestId) => {
     try {
       const reportUrlData = await getReportUrlFromApi(requestId);
-      
+
       let pdfUrl = null;
-      
+
       if (reportUrlData.status === "success" && reportUrlData.message?.data?.report_pdf) {
         pdfUrl = reportUrlData.message.data.report_pdf;
       } else if (reportUrlData.url || reportUrlData.report_url) {
@@ -164,7 +156,7 @@ export default function ClinicRequests() {
       } else {
         pdfUrl = url;
       }
-      
+
       if (pdfUrl) {
         window.open(pdfUrl, '_blank');
       } else {
@@ -278,9 +270,9 @@ export default function ClinicRequests() {
         patient_id: patientId || accessionNumberModal.request.Patient?.id,
         radgate_id: accessionNumberModal.request?.id,
       });
-      
-      const updatedRequests = requests.map(req => 
-        req.id === accessionNumberModal.request.id 
+
+      const updatedRequests = requests.map(req =>
+        req.id === accessionNumberModal.request.id
           ? { ...req, accession_number_added: true }
           : req
       );
@@ -334,9 +326,9 @@ export default function ClinicRequests() {
     <>
       {/* User Type Indicator */}
       {userType && (
-        <Box sx={{ 
-          display: 'flex', 
-          justifyContent: 'space-between', 
+        <Box sx={{
+          display: 'flex',
+          justifyContent: 'space-between',
           alignItems: 'center',
           mb: 2,
           p: 2,
@@ -496,7 +488,7 @@ export default function ClinicRequests() {
                         <TableCell>{renderStatusIcon(item.status)}</TableCell>
                         <TableCell>
                           {String(item?.receiverClinic?.id) ===
-                          String(localStorage.getItem("orgId")) ? (
+                            String(localStorage.getItem("orgId")) ? (
                             <>
                               <IconButton
                                 color="info"

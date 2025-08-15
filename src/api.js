@@ -21,6 +21,22 @@ const awsApi = axios.create({
     },
 });
 
+// Helper function to send push notifications
+const sendNotificationToOrganization = async (organizationId, message, userInfo = null, requestId = null) => {
+    try {
+        const payload = { 
+            organization_id: organizationId, 
+            notification: message,
+            user_type: userInfo?.type || 'unknown',
+            request_id: requestId
+        };
+        await api.post('/aws/push-notification', payload);
+    } catch (error) {
+        console.error('Error sending push notification:', error);
+        // Don't throw error to avoid breaking main functionality
+    }
+};
+
 // Get access token
 export const getAccessToken = async () => {
     try {
@@ -77,9 +93,25 @@ export const getAllModalityRequestTypes = async () => {
 };
 
 // Update clinic request status
-export const updateClinicRequestStatus = async (id, status) => {
+export const updateClinicRequestStatus = async (id, status, userInfo = null) => {
     try {
         const response = await api.patch(`/clinic-requests/${id}/status`, { status });
+        
+        // Send push notification to receiver clinic about status change
+        if (response.data && response.data.receiverClinic?.id) {
+            const statusMessages = {
+                'pending': 'A new request is pending for your organization.',
+                'rejected': 'A request has been rejected for your organization.',
+                'waiting_for_payment': 'A request is waiting for payment for your organization.',
+                'ready_for_examination': 'A request is ready for examination for your organization.',
+                'waiting_for_result': 'A request is waiting for results for your organization.',
+                'finished': 'A request has been completed for your organization.'
+            };
+            
+            const message = statusMessages[status] || `Request status has been updated to ${status} for your organization.`;
+            await sendNotificationToOrganization(response.data.receiverClinic.id, message, userInfo, id);
+        }
+        
         return response.data;
     } catch (error) {
         console.error('Error updating clinic request status:', error);
@@ -88,9 +120,20 @@ export const updateClinicRequestStatus = async (id, status) => {
 };
 
 // Upload report file to a clinic request
-export const uploadClinicRequestReport = async (id, url_file) => {
+export const uploadClinicRequestReport = async (id, url_file, userInfo = null) => {
     try {
         const response = await api.post(`/clinic-requests/${id}/report`, { url_file });
+        
+        // Send push notification to receiver clinic about report upload
+        if (response.data && response.data.receiverClinic?.id) {
+            await sendNotificationToOrganization(
+                response.data.receiverClinic.id, 
+                'A report has been uploaded for your organization.', 
+                userInfo, 
+                id
+            );
+        }
+        
         return response.data;
     } catch (error) {
         console.error('Error uploading clinic request report:', error);
@@ -99,9 +142,18 @@ export const uploadClinicRequestReport = async (id, url_file) => {
 };
 
 // Create AWS case details
-export const createAwsCaseDetails = async ({ src_org_id, dest_org_id, patient_id, radgate_id, accession_number }) => {
+export const createAwsCaseDetails = async ({ src_org_id, dest_org_id, patient_id, radgate_id, accession_number }, userInfo = null) => {
     try {
         const response = await api.post('/aws/case-details', { src_org_id, dest_org_id, patient_id, radgate_id, accession_number });
+        
+        // Send push notification to destination organization about case details creation
+        if (dest_org_id) {
+            const message = accession_number 
+                ? `Case details with accession number ${accession_number} have been created for your organization.`
+                : 'Case details have been created for your organization.';
+            await sendNotificationToOrganization(dest_org_id, message, userInfo, radgate_id);
+        }
+        
         return response.data;
     } catch (error) {
         console.error('Error creating AWS case details:', error);
@@ -125,13 +177,105 @@ export const sendPushNotification = async (organization_id, notification, userIn
         const payload = { 
             organization_id, 
             notification,
-            user_type: userInfo.type,
+            user_type: userInfo?.type || 'unknown',
             request_id
         };
         const response = await api.post('/aws/push-notification', payload);
         return response.data;
     } catch (error) {
         console.error('Error sending push notification:', error);
+        throw error;
+    }
+};
+
+// Enhanced clinic request operations with push notifications
+export const createClinicRequest = async (formData, userInfo = null) => {
+    try {
+        const response = await api.post('/clinic-requests', formData);
+        
+        // Send push notification to receiver clinic about new request
+        const receiverClinicId = formData.get('clinic_receiver_id');
+        if (receiverClinicId) {
+            const patientName = formData.get('full_name') || 'Unknown Patient';
+            await sendNotificationToOrganization(
+                receiverClinicId, 
+                `A new request has been created for your organization regarding patient ${patientName}`, 
+                userInfo, 
+                response.data?.id
+            );
+        }
+        
+        return response.data;
+    } catch (error) {
+        console.error('Error creating clinic request:', error);
+        throw error;
+    }
+};
+
+export const updateClinicRequest = async (id, data, userInfo = null) => {
+    try {
+        const response = await api.put(`/clinic-requests/${id}`, data);
+        
+        // Send push notification to receiver clinic about request update
+        if (response.data && response.data.receiverClinic?.id) {
+            await sendNotificationToOrganization(
+                response.data.receiverClinic.id, 
+                'A request has been updated for your organization.', 
+                userInfo, 
+                id
+            );
+        }
+        
+        return response.data;
+    } catch (error) {
+        console.error('Error updating clinic request:', error);
+        throw error;
+    }
+};
+
+export const deleteClinicRequest = async (id, userInfo = null) => {
+    try {
+        // Get request details before deletion to send notification
+        const requestResponse = await api.get(`/clinic-requests/${id}`);
+        const requestData = requestResponse.data;
+        
+        const response = await api.delete(`/clinic-requests/${id}`);
+        
+        // Send push notification to receiver clinic about request deletion
+        if (requestData && requestData.receiverClinic?.id) {
+            await sendNotificationToOrganization(
+                requestData.receiverClinic.id, 
+                'A request has been deleted for your organization.', 
+                userInfo, 
+                id
+            );
+        }
+        
+        return response.data;
+    } catch (error) {
+        console.error('Error deleting clinic request:', error);
+        throw error;
+    }
+};
+
+export const processPaymentForRequest = async (id, paymentData, userInfo = null) => {
+    try {
+        const response = await api.put(`/clinic-requests/${id}/payment`, paymentData);
+        
+        // Send push notification to receiver clinic about payment
+        if (response.data && response.data.receiverClinic?.id) {
+            const paymentType = paymentData.payment_type || 'payment';
+            await sendNotificationToOrganization(
+                response.data.receiverClinic.id, 
+                `A ${paymentType} has been processed for your organization.`, 
+                userInfo, 
+                id
+            );
+        }
+        
+        return response.data;
+    } catch (error) {
+        console.error('Error processing payment:', error);
         throw error;
     }
 };

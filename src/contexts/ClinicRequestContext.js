@@ -1,6 +1,16 @@
 import React, { createContext, useContext, useEffect, useState } from 'react';
 import api from '../api';
-import { updateClinicRequestStatus, uploadClinicRequestReport, createAwsCaseDetails, sendPushNotification, getReportUrl } from '../api';
+import { 
+    updateClinicRequestStatus, 
+    uploadClinicRequestReport, 
+    createAwsCaseDetails, 
+    sendPushNotification, 
+    getReportUrl,
+    createClinicRequest,
+    updateClinicRequest,
+    deleteClinicRequest,
+    processPaymentForRequest
+} from '../api';
 import { useUser } from './UserContext';
 import { getUrlParams } from '../utils/urlParams';
 
@@ -10,6 +20,11 @@ const ClinicRequestContext = createContext();
 
 export const ClinicRequestProvider = ({ children }) => {
     const { user } = useUser();
+
+    // Helper function to get user info for notifications
+    const getUserInfo = () => {
+        return user?.message?.user || null;
+    };
 
     const getAllRequests = async (filters = {}, page = 1, limit = 5) => {
         try {
@@ -55,10 +70,12 @@ export const ClinicRequestProvider = ({ children }) => {
             throw error;
         }
     };
+
     const createRequest = async (data) => {
         try {
-            const res = await api.post('/clinic-requests', data);
-            return res.data;
+            // Use the enhanced createClinicRequest function with user info
+            const userInfo = getUserInfo();
+            return await createClinicRequest(data, userInfo);
         } catch (error) {
             console.error("Erreur lors de la création :", error);
             throw error;
@@ -67,8 +84,9 @@ export const ClinicRequestProvider = ({ children }) => {
 
     const updateRequest = async (id, data) => {
         try {
-            const res = await api.put(`/clinic-requests/${id}`, data);
-            return res.data;
+            // Use the enhanced updateClinicRequest function with user info
+            const userInfo = getUserInfo();
+            return await updateClinicRequest(id, data, userInfo);
         } catch (error) {
             console.error("Erreur lors de la mise à jour :", error);
             throw error;
@@ -77,7 +95,9 @@ export const ClinicRequestProvider = ({ children }) => {
 
     const deleteRequest = async (id) => {
         try {
-            await api.delete(`/clinic-requests/${id}`);
+            // Use the enhanced deleteClinicRequest function with user info
+            const userInfo = getUserInfo();
+            await deleteClinicRequest(id, userInfo);
         } catch (error) {
             console.error("Erreur lors de la suppression :", error);
             throw error;
@@ -96,13 +116,15 @@ export const ClinicRequestProvider = ({ children }) => {
 
     const processPayment = async (id, paymentData) => {
         try {
-            const res = await api.put(`/clinic-requests/${id}/payment`, paymentData);
-            return res.data;
+            // Use the enhanced processPaymentForRequest function with user info
+            const userInfo = getUserInfo();
+            return await processPaymentForRequest(id, paymentData, userInfo);
         } catch (error) {
             console.error("Erreur lors du paiement :", error);
             throw error;
         }
     };
+
     const uploadPDF = async (formData) => {
         try {
             const res = await api.post(`/uploads`, formData, {
@@ -128,18 +150,25 @@ export const ClinicRequestProvider = ({ children }) => {
     };
 
     const patchRequestStatus = async (id, status) => {
-        return await updateClinicRequestStatus(id, status);
+        // Use the enhanced updateClinicRequestStatus function with user info
+        const userInfo = getUserInfo();
+        return await updateClinicRequestStatus(id, status, userInfo);
     };
 
     const uploadReport = async (id, url_file) => {
-        return await uploadClinicRequestReport(id, url_file);
+        // Use the enhanced uploadClinicRequestReport function with user info
+        const userInfo = getUserInfo();
+        return await uploadClinicRequestReport(id, url_file, userInfo);
     };
+
     const createCaseDetails = async (params) => {
-        return await createAwsCaseDetails(params);
+        // Use the enhanced createAwsCaseDetails function with user info
+        const userInfo = getUserInfo();
+        return await createAwsCaseDetails(params, userInfo);
     };
 
     const sendPushNotificationToOrg = async (organization_id, notification, request_id) => {
-        const userInfo = user?.message?.user || null;
+        const userInfo = getUserInfo();
         return await sendPushNotification(organization_id, notification, userInfo, request_id);
     };
 
@@ -148,8 +177,23 @@ export const ClinicRequestProvider = ({ children }) => {
     };
 
     return (
-        <ClinicRequestContext.Provider value={{ getRequestById, createRequest, updateRequest, getAllRequests, deleteRequest, checkPatientByNationality, processPayment, uploadPDF, sendOnlinePayment, getStats,
-        patchRequestStatus, uploadReport, createCaseDetails, sendPushNotificationToOrg, getReportUrlFromApi }}>
+        <ClinicRequestContext.Provider value={{ 
+            getRequestById, 
+            createRequest, 
+            updateRequest, 
+            getAllRequests, 
+            deleteRequest, 
+            checkPatientByNationality, 
+            processPayment, 
+            uploadPDF, 
+            sendOnlinePayment, 
+            getStats,
+            patchRequestStatus, 
+            uploadReport, 
+            createCaseDetails, 
+            sendPushNotificationToOrg, 
+            getReportUrlFromApi 
+        }}>
             {children}
         </ClinicRequestContext.Provider>
     );

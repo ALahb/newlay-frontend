@@ -161,7 +161,7 @@ export default function AddRequestForm() {
             const response = await createRequest(formData);
             console.log('response', response);
             
-            await sendPushNotificationToOrg(clinicReceiver, 'A new request has been created for your organizationof regarding patient ' + fullName, response?.id);
+            // Push notification is now handled automatically in the API
             setTimeout(() => {
                 navigate('/newlay/');
             }, 500);
