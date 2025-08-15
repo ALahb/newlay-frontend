@@ -41,14 +41,16 @@ export default function PreviewRequest({ initialData }) {
             types = [String(requestTypes)];
         }
 
-        // Clean each type and remove empty ones
         return types
             .map(type => String(type).replace(/[\[\]"]/g, '').trim())
             .filter(type => type.length > 0);
     }
 
     const requestTypesArray = formatRequestTypes(initialData.request_types);
-    
+
+    const accessionNumber = initialData.accession_number || '-';
+    const patientId = initialData.patient_id || initialData?.Patient?.id || initialData?.Patient?._id || '-';
+
     return (
         <Card sx={{ maxWidth: 700, mx: 'auto', p: 2 }}>
             <CardContent>
@@ -76,6 +78,11 @@ export default function PreviewRequest({ initialData }) {
                         Phone Number
                     </Typography>
                     <Typography>{initialData?.Patient?.phone || '-'}</Typography>
+
+                    <Typography variant="body2" color="textSecondary" mt={1}>
+                        Patient ID
+                    </Typography>
+                    <Typography>{patientId}</Typography>
                 </Box>
 
                 {/* Clinics Section */}
@@ -119,6 +126,11 @@ export default function PreviewRequest({ initialData }) {
                             <Typography color="textSecondary">No request types specified</Typography>
                         )}
                     </Stack>
+
+                    <Typography variant="body2" color="textSecondary">
+                        Accession Number
+                    </Typography>
+                    <Typography mb={2}>{accessionNumber}</Typography>
 
                     <Typography variant="body2" color="textSecondary">
                         Emergency?
