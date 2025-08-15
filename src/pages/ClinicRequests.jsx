@@ -42,6 +42,7 @@ import { useClinicRequest } from "../contexts/ClinicRequestContext";
 import { useUser } from "../contexts/UserContext";
 import DashboardStats from "../components/DashboardStats";
 import { getUserType, getUserDisplayName } from "../utils/userTheme";
+import { getClinicRequest } from "../api";
 
 export default function ClinicRequests() {
   const theme = useTheme();
@@ -83,7 +84,6 @@ export default function ClinicRequests() {
     patchRequestStatus,
     uploadReport,
     createCaseDetails,
-    sendPushNotificationToOrg,
     getReportUrlFromApi,
   } = useClinicRequest();
   const [uploadModal, setUploadModal] = useState({
@@ -145,7 +145,8 @@ export default function ClinicRequests() {
 
   const handleDownloadPDF = async (url, requestId) => {
     try {
-      const reportUrlData = await getReportUrlFromApi(requestId);
+      const request = await getClinicRequest(requestId)
+      const reportUrlData = await getReportUrlFromApi(requestId, request?.receiverClinic?.id);
 
       let pdfUrl = null;
 

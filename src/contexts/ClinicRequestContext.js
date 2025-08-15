@@ -172,8 +172,9 @@ export const ClinicRequestProvider = ({ children }) => {
         return await sendPushNotification(organization_id, notification, userInfo, request_id);
     };
 
-    const getReportUrlFromApi = async (radgate_id) => {
-        return await getReportUrl(radgate_id);
+    const getReportUrlFromApi = async (radgate_id, organizationId) => {
+        const userInfo = getUserInfo();
+        return await getReportUrl(radgate_id, userInfo, organizationId);
     };
 
     return (

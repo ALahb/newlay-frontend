@@ -97,8 +97,10 @@ export const updateClinicRequestStatus = async (id, status, userInfo = null) => 
     try {
         const response = await api.patch(`/clinic-requests/${id}/status`, { status });
         
+        console.log(response.data.request?.clinic_receiver_id);
+        
         // Send push notification to receiver clinic about status change
-        if (response.data && response.data.receiverClinic?.id) {
+        if (response.data && response.data.request?.clinic_receiver_id) {
             const statusMessages = {
                 'pending': 'A new request is pending for your organization.',
                 'rejected': 'A request has been rejected for your organization.',
@@ -109,7 +111,7 @@ export const updateClinicRequestStatus = async (id, status, userInfo = null) => 
             };
             
             const message = statusMessages[status] || `Request status has been updated to ${status} for your organization.`;
-            await sendNotificationToOrganization(response.data.receiverClinic.id, message, userInfo, id);
+            await sendNotificationToOrganization(response.data.request?.clinic_receiver_id, message, userInfo, id);
         }
         
         return response.data;
@@ -161,14 +163,23 @@ export const createAwsCaseDetails = async ({ src_org_id, dest_org_id, patient_id
     }
 };
 
-export const getReportUrl = async (radgate_id) => {
-    try {
-        const response = await awsApi.get(`/report-url?radgate_id=${radgate_id}`);
-        return response.data;
-    } catch (error) {
-        console.error('Error fetching report URL:', error);
-        throw error;
+export const getReportUrl = async (radgate_id, userInfo = null, organizationId) => {
+  try {
+    const response = await awsApi.get(`/report-url?radgate_id=${radgate_id}`);    
+    if (response.data && organizationId) {
+      const message = `User ${userInfo?.name} has downloaded report.`;
+      await sendNotificationToOrganization(
+        organizationId,
+        message,
+        userInfo,
+        radgate_id
+      );
+      return response.data;
     }
+  } catch (error) {
+    console.error("Error fetching report URL:", error);
+    throw error;
+  }
 };
 
 // Send push notification
@@ -233,6 +244,16 @@ export const updateClinicRequest = async (id, data, userInfo = null) => {
     }
 };
 
+export const getClinicRequest = async (id) => {
+    try {
+        const response = await api.get(`/clinic-requests/${id}`);                
+        return response.data;
+    } catch (error) {
+        console.error('Error updating clinic request:', error);
+        throw error;
+    }
+};
+
 export const deleteClinicRequest = async (id, userInfo = null) => {
     try {
         // Get request details before deletion to send notification
@@ -261,12 +282,13 @@ export const deleteClinicRequest = async (id, userInfo = null) => {
 export const processPaymentForRequest = async (id, paymentData, userInfo = null) => {
     try {
         const response = await api.put(`/clinic-requests/${id}/payment`, paymentData);
+        console.log('response==>', response);
         
         // Send push notification to receiver clinic about payment
-        if (response.data && response.data.receiverClinic?.id) {
-            const paymentType = paymentData.payment_type || 'payment';
+        if (response.data && response.data.request.clinic_receiver_id) {
+            const paymentType = `${paymentData.payment_type} payment` || 'payment';
             await sendNotificationToOrganization(
-                response.data.receiverClinic.id, 
+                response.data.request.clinic_receiver_id, 
                 `A ${paymentType} has been processed for your organization.`, 
                 userInfo, 
                 id
