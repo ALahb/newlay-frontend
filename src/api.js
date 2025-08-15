@@ -97,8 +97,6 @@ export const updateClinicRequestStatus = async (id, status, userInfo = null) => 
     try {
         const response = await api.patch(`/clinic-requests/${id}/status`, { status });
         
-        console.log(response.data.request?.clinic_receiver_id);
-        
         // Send push notification to receiver clinic about status change
         if (response.data && response.data.request?.clinic_receiver_id) {
             const statusMessages = {
@@ -281,9 +279,7 @@ export const deleteClinicRequest = async (id, userInfo = null) => {
 
 export const processPaymentForRequest = async (id, paymentData, userInfo = null) => {
     try {
-        const response = await api.put(`/clinic-requests/${id}/payment`, paymentData);
-        console.log('response==>', response);
-        
+        const response = await api.put(`/clinic-requests/${id}/payment`, paymentData);        
         // Send push notification to receiver clinic about payment
         if (response.data && response.data.request.clinic_receiver_id) {
             const paymentType = `${paymentData.payment_type} payment` || 'payment';
