@@ -537,7 +537,8 @@ export default function ClinicRequests() {
                                           open: true,
                                           request: item,
                                         });
-                                        setPatientId(item.Patient?.id || "");
+                                        setPatientId(item.Patient?.patient_code || "");
+                                        setAccessionNumber(item?.accession_number || "");
                                       }}
                                     >
                                       <Add />

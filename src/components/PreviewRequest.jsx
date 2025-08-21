@@ -49,7 +49,7 @@ export default function PreviewRequest({ initialData }) {
     const requestTypesArray = formatRequestTypes(initialData.request_types);
 
     const accessionNumber = initialData.accession_number || '-';
-    const patientId = initialData.patient_id || initialData?.Patient?.id || initialData?.Patient?._id || '-';
+    const patientId = initialData.patient_code || initialData?.Patient?.patient_code || '-';
 
     return (
         <Card sx={{ maxWidth: 700, mx: 'auto', p: 2 }}>
