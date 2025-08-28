@@ -95,7 +95,7 @@ export const getAllModalityRequestTypes = async () => {
 // Update clinic request status
 export const updateClinicRequestStatus = async (id, status, userInfo = null) => {
     try {
-        const response = await api.patch(`/clinic-requests/${id}/status`, { status });
+        const response = await api.patch(`/clinic-requests/${id}/updateStatus`, { status });
         
         // Send push notification to receiver clinic about status change
         if (response.data && response.data.request?.clinic_receiver_id) {
