@@ -4,7 +4,7 @@ import { getUrlParams } from '../utils/urlParams';
 
 const UserContext = createContext();
 
-export function UserProvider({ children }) {
+export function UserProvider({ userId, children }) {
   const [user, setUser] = useState(null);
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState(null);
@@ -55,10 +55,6 @@ export function UserProvider({ children }) {
   }, []);
 
   useEffect(() => {
-    const { userId } = getUrlParams();
-    console.log('userId', userId);
-    localStorage.setItem('userId', userId);
-
     if (userId && !user) {
       console.log('Auto-fetching user details for userId:', userId);
       fetchUserDetails(userId);

@@ -24,12 +24,14 @@ import { useNavigate } from 'react-router-dom';
 import { useClinicRequest } from '../contexts/ClinicRequestContext';
 import { getAllOrganizations, getAllModalityRequestTypes, getOrganizationDetails } from '../api';
 import { useOrganization } from '../contexts/OrganizationContext';
+import { useUser } from '../contexts/UserContext';
 
 export default function AddRequestForm() {
     const navigate = useNavigate();
     const { createRequest, sendPushNotificationToOrg } = useClinicRequest();
     const { organizationId } = useOrganization();
-    
+    const { user } = useUser();
+
     const [fullName, setFullName] = useState('');
     const [nationalityIdInRequest, setNationalityIdInRequest] = useState('');
     const [clinicProvider, setClinicProvider] = useState(organizationId || '');
@@ -155,7 +157,7 @@ export default function AddRequestForm() {
         formData.append('referral_doctor', referralDoctor);
         formData.append('has_old_study', oldStudy === 'yes' ? 'true' : 'false');
         formData.append('complaint_history', complaint);
-        formData.append('user_id', localStorage.getItem('userId'));
+        formData.append('user_id', user?.message?.user?.id);
         
         try {
             const response = await createRequest(formData);

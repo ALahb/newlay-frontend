@@ -11,6 +11,7 @@ import PaymentPage from "./pages/PaymentPage";
 import { getOrganizationDetails } from "./api";
 import { getUserTheme, getUserType } from "./utils/userTheme";
 import BreadcrumbsNav from "./components/BreadcrumbsNav";
+import { jwtDecode } from "jwt-decode";
 
 function ThemedApp() {
   const { user } = useUser();
@@ -105,16 +106,48 @@ function ThemedApp() {
 }
 
 function App() {
+  const [userId, setUserId] = useState(null);
+  const [organizationId, setOrganizationId] = useState(null);
+
+  useEffect(() => {
+    window.addEventListener('message', (event) => {
+      // You may want to check event.origin for security
+      if (event.data && typeof event.data === 'string' && event.data.startsWith('ey')) { // crude JWT check
+        const idToken = event.data;
+        // Decode the token here
+        const decoded = jwtDecode(idToken); // see below for installation
+        console.log('Decoded JWT:', decoded['custom:rology_user'], decoded['custom:organizationId']);
+        // You can now access user ID, organization ID, etc.
+        setUserId(decoded['custom:rology_user']);
+        setOrganizationId(decoded['custom:organizationId']);
+      }
+    });
+    return () => window.removeEventListener('message', (event) => {
+      if (event.data && typeof event.data === 'string' && event.data.startsWith('ey')) {
+        const idToken = event.data;
+        const decoded = jwtDecode(idToken);
+        console.log('Decoded JWT:', decoded);
+      }
+    });
+  }, []);
+
   return (
-    <UserProvider>
-      <ClinicRequestProvider>
-        <Router>
-          <OrganizationProvider>
-            <ThemedApp />
-          </OrganizationProvider>
-        </Router>
-      </ClinicRequestProvider>
-    </UserProvider>
+    userId ? (
+      <UserProvider userId={userId}>
+        <ClinicRequestProvider>
+          <Router>
+            <OrganizationProvider organizationId={organizationId}>
+              <ThemedApp />
+            </OrganizationProvider>
+          </Router>
+        </ClinicRequestProvider>
+      </UserProvider>
+    ) : (
+      <div>
+        <h2>Waiting for authentication...</h2>
+        <p>Please ensure you are logged in through the main application.</p>
+      </div>
+    )
   );
 }
 
