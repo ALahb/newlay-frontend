@@ -110,25 +110,25 @@ function App() {
   const [organizationId, setOrganizationId] = useState(null);
 
   useEffect(() => {
-    window.addEventListener('message', (event) => {
-      // You may want to check event.origin for security
-      if (event.data && typeof event.data === 'string' && event.data.startsWith('ey')) { // crude JWT check
-        const idToken = event.data;
-        // Decode the token here
-        const decoded = jwtDecode(idToken); // see below for installation
-        console.log('Decoded JWT:', decoded['custom:rology_user'], decoded['custom:organizationId']);
-        // You can now access user ID, organization ID, etc.
-        setUserId(decoded['custom:rology_user']);
-        setOrganizationId(decoded['custom:organizationId']);
+    const handleMessage = (event) => {
+
+      if (event.data && event.data.type === 'idToken' && event.data.token) {
+        const idToken = event.data.token;
+
+        try {
+          const decoded = jwtDecode(idToken);
+          console.log('Decoded JWT:', decoded['custom:rology_user'], decoded['custom:organizationId']);
+          setUserId(decoded['custom:rology_user']);
+          setOrganizationId(decoded['custom:organizationId']);
+          localStorage.setItem("orgId", decoded['custom:organizationId']); // keep consistency with ThemedApp
+        } catch (error) {
+          console.error("Failed to decode JWT:", error);
+        }
       }
-    });
-    return () => window.removeEventListener('message', (event) => {
-      if (event.data && typeof event.data === 'string' && event.data.startsWith('ey')) {
-        const idToken = event.data;
-        const decoded = jwtDecode(idToken);
-        console.log('Decoded JWT:', decoded);
-      }
-    });
+    };
+
+    window.addEventListener('message', handleMessage);
+    return () => window.removeEventListener('message', handleMessage);
   }, []);
 
   return (
