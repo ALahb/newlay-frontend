@@ -1,6 +1,7 @@
 import React, { createContext, useContext, useState, useEffect } from 'react';
 import { useSearchParams } from 'react-router-dom';
 import { getUrlParams } from '../utils/urlParams';
+import storageManager from '../utils/storage';
 
 const OrganizationContext = createContext();
 
@@ -10,7 +11,7 @@ export function OrganizationProvider({ organizationId, children }) {
   useEffect(() => {
     if (organizationId) {
       setOrgId(organizationId);
-      localStorage.setItem('orgId', organizationId);
+      storageManager.setItem('orgId', organizationId);
     }
     // eslint-disable-next-line
   }, [organizationId]);
@@ -21,7 +22,7 @@ export function OrganizationProvider({ organizationId, children }) {
     if (orgIdFromParams && !orgaId) {
       console.log('Auto-setting organization ID from URL params:', orgIdFromParams);
       setOrgId(orgIdFromParams);
-      localStorage.setItem('orgId', orgIdFromParams);
+      storageManager.setItem('orgId', orgIdFromParams);
     }
   }, [orgaId]);
 

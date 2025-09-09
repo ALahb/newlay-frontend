@@ -1,5 +1,5 @@
 import React, { useState, useEffect } from "react";
-import { Container, Typography, Box, ThemeProvider, CssBaseline } from "@mui/material";
+import { Container, Typography, Box, ThemeProvider, CssBaseline, Alert } from "@mui/material";
 import { BrowserRouter as Router, Routes, Route } from "react-router-dom";
 import ClinicRequests from "./pages/ClinicRequests";
 import AddRequestPage from "./pages/AddRequestPage";
@@ -12,17 +12,28 @@ import { getOrganizationDetails } from "./api";
 import { getUserTheme, getUserType } from "./utils/userTheme";
 import BreadcrumbsNav from "./components/BreadcrumbsNav";
 import { jwtDecode } from "jwt-decode";
+import { getAuthParams, setAuthParams, isInIframe, getStorageStatus } from "./utils/authParams";
+import storageManager from "./utils/storage";
 
 function ThemedApp() {
   const { user } = useUser();
   const [clinicProviderName, setClinicProviderName] = useState(null);
+  const [storageStatus, setStorageStatus] = useState(null);
 
   useEffect(() => {
-    getOrganizationDetails(localStorage.getItem('orgId')).then(res => {
-        setClinicProviderName(res.message?.organization?.name);
-        console.log('clinicProviderName', res.message?.organization?.name);
-    });
-  }, [localStorage.getItem('orgId')]);
+    const orgId = storageManager.getItem('orgId');
+    if (orgId) {
+      getOrganizationDetails(orgId).then(res => {
+          setClinicProviderName(res.message?.organization?.name);
+          console.log('clinicProviderName', res.message?.organization?.name);
+      });
+    }
+    
+    // Log storage status for debugging
+    const status = getStorageStatus();
+    setStorageStatus(status);
+    console.log('Storage status:', status);
+  }, []);
 
   const userType = getUserType(user);
   const theme = getUserTheme(userType);
@@ -31,6 +42,13 @@ function ThemedApp() {
     <ThemeProvider theme={theme}>
       <CssBaseline />
       <Container maxWidth="lg" sx={{ mt: 5 }}>
+        {/* Storage status warning for debugging */}
+        {storageStatus && !storageStatus.isInIframe && storageStatus.storageType === 'memory' && (
+          <Alert severity="warning" sx={{ mb: 2 }}>
+            Mode de navigation privé détecté. Les données sont stockées temporairement en mémoire.
+          </Alert>
+        )}
+        
         {userType && (
           <Box sx={{ 
             display: 'flex', 
@@ -108,19 +126,41 @@ function ThemedApp() {
 function App() {
   const [userId, setUserId] = useState(null);
   const [organizationId, setOrganizationId] = useState(null);
+  const [authSource, setAuthSource] = useState(null);
+  const [isLoading, setIsLoading] = useState(true);
+
+  useEffect(() => {
+    // Try to get auth params from URL or storage
+    const authParams = getAuthParams();
+    console.log('Auth params:', authParams);
+    
+    if (authParams.userId && authParams.organizationId) {
+      setUserId(authParams.userId);
+      setOrganizationId(authParams.organizationId);
+      setAuthSource(authParams.source);
+      setIsLoading(false);
+    } else {
+      setIsLoading(false);
+    }
+  }, []);
 
   useEffect(() => {
     const handleMessage = (event) => {
-
       if (event.data && event.data.type === 'idToken' && event.data.token) {
         const idToken = event.data.token;
 
         try {
           const decoded = jwtDecode(idToken);
           console.log('Decoded JWT:', decoded['custom:rology_user'], decoded['custom:organizationId']);
-          setUserId(decoded['custom:rology_user']);
-          setOrganizationId(decoded['custom:organizationId']);
-          localStorage.setItem("orgId", decoded['custom:organizationId']); // keep consistency with ThemedApp
+          const newUserId = decoded['custom:rology_user'];
+          const newOrgId = decoded['custom:organizationId'];
+          
+          setUserId(newUserId);
+          setOrganizationId(newOrgId);
+          setAuthSource('jwt');
+          
+          // Store in our storage manager
+          setAuthParams(newUserId, newOrgId);
         } catch (error) {
           console.error("Failed to decode JWT:", error);
         }
@@ -131,23 +171,41 @@ function App() {
     return () => window.removeEventListener('message', handleMessage);
   }, []);
 
-  return (
-    userId ? (
-      <UserProvider userId={userId}>
-        <ClinicRequestProvider>
-          <Router>
-            <OrganizationProvider organizationId={organizationId}>
-              <ThemedApp />
-            </OrganizationProvider>
-          </Router>
-        </ClinicRequestProvider>
-      </UserProvider>
-    ) : (
-      <div>
-        <h2>Waiting for authentication...</h2>
-        <p>Please ensure you are logged in through the main application.</p>
+  if (isLoading) {
+    return (
+      <div style={{ padding: '20px', textAlign: 'center' }}>
+        <h2>Chargement...</h2>
+        <p>Vérification des paramètres d'authentification...</p>
       </div>
-    )
+    );
+  }
+
+  if (!userId || !organizationId) {
+    return (
+      <div style={{ padding: '20px', textAlign: 'center' }}>
+        <h2>Authentification requise</h2>
+        <p>Veuillez vous assurer que vous êtes connecté via l'application principale.</p>
+        {isInIframe() && (
+          <Alert severity="info" sx={{ mt: 2, maxWidth: 600, mx: 'auto' }}>
+            <strong>Mode iframe détecté :</strong> Assurez-vous que les paramètres userId et organizationId sont passés dans l'URL.
+            <br />
+            <code>?userId=YOUR_USER_ID&organizationId=YOUR_ORG_ID</code>
+          </Alert>
+        )}
+      </div>
+    );
+  }
+
+  return (
+    <UserProvider userId={userId}>
+      <ClinicRequestProvider>
+        <Router>
+          <OrganizationProvider organizationId={organizationId}>
+            <ThemedApp />
+          </OrganizationProvider>
+        </Router>
+      </ClinicRequestProvider>
+    </UserProvider>
   );
 }
 

@@ -1,6 +1,7 @@
 import React, { createContext, useContext, useState, useEffect } from 'react';
 import { getUserDetails } from '../api';
 import { getUrlParams } from '../utils/urlParams';
+import storageManager from '../utils/storage';
 
 const UserContext = createContext();
 
@@ -21,7 +22,7 @@ export function UserProvider({ userId, children }) {
     try {
       const userData = await getUserDetails(userId);
       setUser(userData);
-      localStorage.setItem('userData', JSON.stringify(userData));
+      storageManager.setItem('userData', JSON.stringify(userData));
     } catch (err) {
       setError(err.message || 'Failed to fetch user details');
       console.error('Error fetching user details:', err);
@@ -33,23 +34,23 @@ export function UserProvider({ userId, children }) {
   const clearUser = () => {
     setUser(null);
     setError(null);
-    localStorage.removeItem('userData');
+    storageManager.removeItem('userData');
   };
 
   const updateUser = (newUserData) => {
     setUser(newUserData);
-    localStorage.setItem('userData', JSON.stringify(newUserData));
+    storageManager.setItem('userData', JSON.stringify(newUserData));
   };
 
   useEffect(() => {
-    const savedUserData = localStorage.getItem('userData');
+    const savedUserData = storageManager.getItem('userData');
     if (savedUserData) {
       try {
         const parsedUserData = JSON.parse(savedUserData);
         setUser(parsedUserData);
       } catch (err) {
         console.error('Error parsing saved user data:', err);
-        localStorage.removeItem('userData');
+        storageManager.removeItem('userData');
       }
     }
   }, []);
