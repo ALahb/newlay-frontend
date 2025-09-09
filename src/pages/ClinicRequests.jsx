@@ -134,7 +134,14 @@ export default function ClinicRequests() {
     try {
       // Push notification is now handled automatically in the API
       await deleteRequest(deleteId);
-      const response = await getAllRequests({ clinic_provider_id: localStorage.getItem("orgId"), clinic_receiver_id: localStorage.getItem("orgId") }, page, 10);
+      const response = await getAllRequests(
+        {
+          clinic_provider_id: localStorage.getItem("orgId"),
+          clinic_receiver_id: localStorage.getItem("orgId"),
+        },
+        page,
+        10
+      );
       setRequests(response.data);
       setPagination(response.pagination);
       setDeleteId(null);
@@ -145,12 +152,18 @@ export default function ClinicRequests() {
 
   const handleDownloadPDF = async (url, requestId) => {
     try {
-      const request = await getClinicRequest(requestId)
-      const reportUrlData = await getReportUrlFromApi(requestId, request?.receiverClinic?.id);
+      const request = await getClinicRequest(requestId);
+      const reportUrlData = await getReportUrlFromApi(
+        requestId,
+        request?.receiverClinic?.id
+      );
 
       let pdfUrl = null;
 
-      if (reportUrlData.status === "success" && reportUrlData.message?.data?.report_pdf) {
+      if (
+        reportUrlData.status === "success" &&
+        reportUrlData.message?.data?.report_pdf
+      ) {
         pdfUrl = reportUrlData.message.data.report_pdf;
       } else if (reportUrlData.url || reportUrlData.report_url) {
         pdfUrl = reportUrlData.url || reportUrlData.report_url;
@@ -159,7 +172,7 @@ export default function ClinicRequests() {
       }
 
       if (pdfUrl) {
-        window.open(pdfUrl, '_blank');
+        window.open(pdfUrl, "_blank");
       } else {
         console.error("No PDF URL found in response");
       }
@@ -272,7 +285,7 @@ export default function ClinicRequests() {
         radgate_id: accessionNumberModal.request?.id,
       });
 
-      const updatedRequests = requests.map(req =>
+      const updatedRequests = requests.map((req) =>
         req.id === accessionNumberModal.request.id
           ? { ...req, accession_number_added: true }
           : req
@@ -327,16 +340,18 @@ export default function ClinicRequests() {
     <>
       {/* User Type Indicator */}
       {userType && (
-        <Box sx={{
-          display: 'flex',
-          justifyContent: 'space-between',
-          alignItems: 'center',
-          mb: 2,
-          p: 2,
-          borderRadius: 2,
-          background: `linear-gradient(135deg, ${theme.palette.primary.main}20, ${theme.palette.primary.light}20)`,
-          border: `1px solid ${theme.palette.primary.main}30`
-        }}>
+        <Box
+          sx={{
+            display: "flex",
+            justifyContent: "space-between",
+            alignItems: "center",
+            mb: 2,
+            p: 2,
+            borderRadius: 2,
+            background: `linear-gradient(135deg, ${theme.palette.primary.main}20, ${theme.palette.primary.light}20)`,
+            border: `1px solid ${theme.palette.primary.main}30`,
+          }}
+        >
           <Box>
             <Typography variant="h6" color="primary" fontWeight="bold">
               Welcome, {userDisplayName}!
@@ -351,9 +366,9 @@ export default function ClinicRequests() {
             variant="filled"
             sx={{
               background: `linear-gradient(45deg, ${theme.palette.primary.main}, ${theme.palette.primary.light})`,
-              color: 'white',
-              fontWeight: 'bold',
-              textTransform: 'capitalize'
+              color: "white",
+              fontWeight: "bold",
+              textTransform: "capitalize",
             }}
           />
         </Box>
@@ -489,7 +504,7 @@ export default function ClinicRequests() {
                         <TableCell>{renderStatusIcon(item.status)}</TableCell>
                         <TableCell>
                           {String(item?.receiverClinic?.id) ===
-                            String(localStorage.getItem("orgId")) ? (
+                          String(localStorage.getItem("orgId")) ? (
                             <>
                               <IconButton
                                 color="info"
@@ -527,23 +542,43 @@ export default function ClinicRequests() {
                                   </Tooltip>
                                 </>
                               )}
-                              {item.status === "ready_for_examination" && !item.accession_number_added && (
-                                <Tooltip title="Add Accession Number">
-                                  <span>
-                                    <IconButton
-                                      color="primary"
-                                      onClick={() => {
-                                        setAccessionNumberModal({
-                                          open: true,
-                                          request: item,
-                                        });
-                                        setPatientId(item.Patient?.patient_code || "");
-                                        setAccessionNumber(item?.accession_number || "");
-                                      }}
-                                    >
-                                      <Add />
-                                    </IconButton>
-                                  </span>
+                              {item.status === "ready_for_examination" &&
+                                !item.accession_number_added && (
+                                  <Tooltip title="Add Accession Number">
+                                    <span>
+                                      <IconButton
+                                        color="primary"
+                                        onClick={() => {
+                                          setAccessionNumberModal({
+                                            open: true,
+                                            request: item,
+                                          });
+                                          setPatientId(
+                                            item.Patient?.patient_code || ""
+                                          );
+                                          setAccessionNumber(
+                                            item?.accession_number || ""
+                                          );
+                                        }}
+                                      >
+                                        <Add />
+                                      </IconButton>
+                                    </span>
+                                  </Tooltip>
+                                )}
+                              {item.status === "finished" && (
+                                <Tooltip title="View PDF Report">
+                                  <IconButton
+                                    color="primary"
+                                    onClick={() =>
+                                      handleDownloadPDF(
+                                        item.report_file,
+                                        item.id
+                                      )
+                                    }
+                                  >
+                                    <PictureAsPdf />
+                                  </IconButton>
                                 </Tooltip>
                               )}
                             </>
@@ -585,7 +620,10 @@ export default function ClinicRequests() {
                                   <IconButton
                                     color="primary"
                                     onClick={() =>
-                                      handleDownloadPDF(item.report_file, item.id)
+                                      handleDownloadPDF(
+                                        item.report_file,
+                                        item.id
+                                      )
                                     }
                                   >
                                     <PictureAsPdf />
@@ -672,7 +710,9 @@ export default function ClinicRequests() {
             value={patientId}
             onChange={(e) => setPatientId(e.target.value)}
             disabled={accessionNumberLoading}
-            placeholder={accessionNumberModal.request?.Patient?.id || "Enter Patient ID"}
+            placeholder={
+              accessionNumberModal.request?.Patient?.id || "Enter Patient ID"
+            }
           />
         </DialogContent>
         <DialogActions>

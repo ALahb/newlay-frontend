@@ -248,8 +248,8 @@ export default function AddRequestForm() {
                         <Autocomplete
                             options={requestTypeOptions}
                             getOptionLabel={(option) => option.label || ''}
-                            value={requestTypeOptions.find(opt => opt.value === requestType) || null}
-                            onChange={(_, newValue) => setRequestType(newValue ? newValue.value : '')}
+                            value={requestTypeOptions.find(opt => opt.label === requestType) || null}
+                            onChange={(_, newValue) => setRequestType(newValue ? newValue.label : '')}
                             renderInput={(params) => (
                                 <TextField
                                     {...params}
@@ -258,7 +258,7 @@ export default function AddRequestForm() {
                                     value={requestTypeSearch}
                                 />
                             )}
-                            isOptionEqualToValue={(option, value) => option.value === value.value}
+                            isOptionEqualToValue={(option, value) => option.label === value.label}
                             filterOptions={(options, state) => {
                                 return options.filter(option =>
                                     option.label.toLowerCase().includes(state.inputValue.toLowerCase())
