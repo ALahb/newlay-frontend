@@ -29,12 +29,12 @@ import { useUser } from '../contexts/UserContext';
 export default function AddRequestForm() {
     const navigate = useNavigate();
     const { createRequest, sendPushNotificationToOrg } = useClinicRequest();
-    const { orgaId } = useOrganization();
+    const { organizationId } = useOrganization();
     const { user } = useUser();
 
     const [fullName, setFullName] = useState('');
     const [nationalityIdInRequest, setNationalityIdInRequest] = useState('');
-    const [clinicProvider, setClinicProvider] = useState(orgaId || '');
+    const [clinicProvider, setClinicProvider] = useState(organizationId || '');
     const [clinicProviderName, setClinicProviderName] = useState('');
     const [clinicReceiver, setClinicReceiver] = useState('');
     // Change requestType to a single value (string)
@@ -119,19 +119,18 @@ export default function AddRequestForm() {
         };
 
         fetchData();
-    }, [orgaId]);
+    }, [organizationId]);
 
     useEffect(() => {
-        if (orgaId) {
-            setClinicProvider(orgaId);
+        if (organizationId || localStorage.getItem('orgId')) {
+            setClinicProvider(organizationId || localStorage.getItem('orgId'));
         }
 
-        if (!orgaId) return;
-        getOrganizationDetails(orgaId).then(res => {
+        getOrganizationDetails(organizationId || localStorage.getItem('orgId')).then(res => {
             setClinicProviderName(res.message?.organization?.name);
             console.log('clinicProviderName', res.message?.organization?.name);
         });
-    }, [orgaId]);
+    }, [organizationId, localStorage.getItem('orgId')]);
 
     const handleSubmit = async (e) => {
         e.preventDefault();
