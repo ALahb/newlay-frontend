@@ -5,7 +5,7 @@ import ClinicRequests from "./pages/ClinicRequests";
 import AddRequestPage from "./pages/AddRequestPage";
 import EditRequestPage from "./pages/PreviewRequestPage";
 import { ClinicRequestProvider } from "./contexts/ClinicRequestContext";
-import { OrganizationProvider } from "./contexts/OrganizationContext";
+import { OrganizationProvider, useOrganization } from "./contexts/OrganizationContext";
 import { UserProvider, useUser } from "./contexts/UserContext";
 import PaymentPage from "./pages/PaymentPage";
 import { getOrganizationDetails } from "./api";
@@ -15,14 +15,19 @@ import { jwtDecode } from "jwt-decode";
 
 function ThemedApp() {
   const { user } = useUser();
+  const { orgaId } = useOrganization();
   const [clinicProviderName, setClinicProviderName] = useState(null);
 
   useEffect(() => {
-    getOrganizationDetails(localStorage.getItem('orgId')).then(res => {
-        setClinicProviderName(res.message?.organization?.name);
-        console.log('clinicProviderName', res.message?.organization?.name);
+    if (!orgaId) {
+      setClinicProviderName(null);
+      return;
+    }
+    getOrganizationDetails(orgaId).then(res => {
+      setClinicProviderName(res.message?.organization?.name);
+      console.log('clinicProviderName', res.message?.organization?.name);
     });
-  }, [localStorage.getItem('orgId')]);
+  }, [orgaId]);
 
   const userType = getUserType(user);
   const theme = getUserTheme(userType);
@@ -111,7 +116,7 @@ function App() {
 
   useEffect(() => {
     const handleMessage = (event) => {
-
+      // Optionally validate event.origin here against an allowlist
       if (event.data && event.data.type === 'idToken' && event.data.token) {
         const idToken = event.data.token;
 
@@ -120,7 +125,6 @@ function App() {
           console.log('Decoded JWT:', decoded['custom:rology_user'], decoded['custom:organizationId']);
           setUserId(decoded['custom:rology_user']);
           setOrganizationId(decoded['custom:organizationId']);
-          localStorage.setItem("orgId", decoded['custom:organizationId']); // keep consistency with ThemedApp
         } catch (error) {
           console.error("Failed to decode JWT:", error);
         }
@@ -128,7 +132,36 @@ function App() {
     };
 
     window.addEventListener('message', handleMessage);
-    return () => window.removeEventListener('message', handleMessage);
+    
+    // Fallback: read from URL params if present
+    try {
+      const params = new URLSearchParams(window.location.search);
+      const urlUserId = params.get('userId');
+      const urlOrgId = params.get('organizationId');
+      if (urlUserId) {
+        setUserId(urlUserId);
+      }
+      if (urlOrgId) {
+        setOrganizationId(urlOrgId);
+      }
+    } catch (_) {}
+
+    // Initiate handshake with parent to request token
+    try {
+      const request = { type: 'REQUEST_ID_TOKEN' };
+      // Send immediately and after a short delay to cover race conditions
+      window.parent?.postMessage(request, '*');
+      const retryTimer = setTimeout(() => {
+        window.parent?.postMessage(request, '*');
+      }, 500);
+
+      return () => {
+        window.removeEventListener('message', handleMessage);
+        clearTimeout(retryTimer);
+      };
+    } catch (_) {
+      return () => window.removeEventListener('message', handleMessage);
+    }
   }, []);
 
   return (
