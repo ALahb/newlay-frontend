@@ -12,10 +12,7 @@ import {
     processPaymentForRequest
 } from '../api';
 import { useUser } from './UserContext';
-import { getUrlParams } from '../utils/urlParams';
-
-const { userId, organizationId } = getUrlParams();
-console.log(userId, organizationId);
+// Removed module-scope URL param reads to avoid race conditions when running in iframe
 const ClinicRequestContext = createContext();
 
 export const ClinicRequestProvider = ({ children }) => {

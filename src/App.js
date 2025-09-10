@@ -117,17 +117,62 @@ function App() {
   useEffect(() => {
     const handleMessage = (event) => {
       // Optionally validate event.origin here against an allowlist
-      if (event.data && event.data.type === 'idToken' && event.data.token) {
-        const idToken = event.data.token;
+      const data = event?.data;
+      if (!data) return;
 
+      // Case 1: Explicit token message
+      if (data.type === 'idToken' && data.token) {
         try {
-          const decoded = jwtDecode(idToken);
-          console.log('Decoded JWT:', decoded['custom:rology_user'], decoded['custom:organizationId']);
-          setUserId(decoded['custom:rology_user']);
-          setOrganizationId(decoded['custom:organizationId']);
+          const decoded = jwtDecode(data.token);
+          setUserId(
+            decoded['custom:rology_user'] ||
+            decoded['sub'] ||
+            decoded['userId'] ||
+            decoded['user_id']
+          );
+          setOrganizationId(
+            decoded['custom:organizationId'] ||
+            decoded['organizationId'] ||
+            decoded['orgId'] ||
+            decoded['organization_id']
+          );
         } catch (error) {
-          console.error("Failed to decode JWT:", error);
+          console.error('Failed to decode JWT:', error);
         }
+        return;
+      }
+
+      // Case 2: Bare token without type
+      if (data.token && typeof data.token === 'string') {
+        try {
+          const decoded = jwtDecode(data.token);
+          setUserId(
+            decoded['custom:rology_user'] ||
+            decoded['sub'] ||
+            decoded['userId'] ||
+            decoded['user_id']
+          );
+          setOrganizationId(
+            decoded['custom:organizationId'] ||
+            decoded['organizationId'] ||
+            decoded['orgId'] ||
+            decoded['organization_id']
+          );
+        } catch (error) {
+          console.error('Failed to decode JWT:', error);
+        }
+        return;
+      }
+
+      // Case 3: Parent sends plain IDs or a different type
+      if (
+        (data.type === 'AUTH' || data.type === 'AUTH_INFO' || !data.type) &&
+        (data.userId || data.user_id) &&
+        (data.organizationId || data.orgId || data.organization_id)
+      ) {
+        setUserId(data.userId || data.user_id);
+        setOrganizationId(data.organizationId || data.orgId || data.organization_id);
+        return;
       }
     };
 
