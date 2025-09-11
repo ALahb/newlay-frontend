@@ -43,12 +43,14 @@ import { useUser } from "../contexts/UserContext";
 import DashboardStats from "../components/DashboardStats";
 import { getUserType, getUserDisplayName } from "../utils/userTheme";
 import { getClinicRequest } from "../api";
+import { useOrganization } from "../contexts/OrganizationContext";
 
 export default function ClinicRequests() {
   const theme = useTheme();
   const { user } = useUser();
   const userType = getUserType(user);
   const userDisplayName = getUserDisplayName(user);
+  const { orgaId } = useOrganization();
 
   const [requests, setRequests] = useState([]);
   const [deleteId, setDeleteId] = useState(null);
@@ -104,9 +106,8 @@ export default function ClinicRequests() {
     const handler = setTimeout(() => {
       const filtersWithIds = {
         ...filters,
-        clinic_provider_id: localStorage.getItem("orgId"),
-        clinic_receiver_id:
-          filters.receiverClinic || localStorage.getItem("orgId"),
+        clinic_provider_id: orgaId,
+        clinic_receiver_id: filters.receiverClinic || orgaId,
       };
       getAllRequests(filtersWithIds, page, 10).then((response) => {
         setRequests(response.data);
@@ -115,7 +116,7 @@ export default function ClinicRequests() {
     }, 500);
 
     return () => clearTimeout(handler);
-  }, [filters, page, getAllRequests]);
+  }, [filters, page, getAllRequests, orgaId]);
 
   useEffect(() => {
     const fetchStats = async () => {
@@ -136,8 +137,8 @@ export default function ClinicRequests() {
       await deleteRequest(deleteId);
       const response = await getAllRequests(
         {
-          clinic_provider_id: localStorage.getItem("orgId"),
-          clinic_receiver_id: localStorage.getItem("orgId"),
+          clinic_provider_id: orgaId,
+          clinic_receiver_id: orgaId,
         },
         page,
         10
@@ -243,8 +244,8 @@ export default function ClinicRequests() {
       await patchRequestStatus(id, "waiting_for_payment");
       const response = await getAllRequests(
         {
-          clinic_provider_id: localStorage.getItem("orgId"),
-          clinic_receiver_id: localStorage.getItem("orgId"),
+          clinic_provider_id: orgaId,
+          clinic_receiver_id: orgaId,
         },
         page,
         10
@@ -261,8 +262,8 @@ export default function ClinicRequests() {
       await patchRequestStatus(id, "rejected");
       const response = await getAllRequests(
         {
-          clinic_provider_id: localStorage.getItem("orgId"),
-          clinic_receiver_id: localStorage.getItem("orgId"),
+          clinic_provider_id: orgaId,
+          clinic_receiver_id: orgaId,
         },
         page,
         10
@@ -503,8 +504,7 @@ export default function ClinicRequests() {
                         <TableCell>{item?.providerClinic?.name}</TableCell>
                         <TableCell>{renderStatusIcon(item.status)}</TableCell>
                         <TableCell>
-                          {String(item?.receiverClinic?.id) ===
-                          String(localStorage.getItem("orgId")) ? (
+                          {String(item?.receiverClinic?.id) === String(orgaId) ? (
                             <>
                               <IconButton
                                 color="info"

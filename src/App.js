@@ -5,7 +5,7 @@ import ClinicRequests from "./pages/ClinicRequests";
 import AddRequestPage from "./pages/AddRequestPage";
 import EditRequestPage from "./pages/PreviewRequestPage";
 import { ClinicRequestProvider } from "./contexts/ClinicRequestContext";
-import { OrganizationProvider } from "./contexts/OrganizationContext";
+import { OrganizationProvider, useOrganization } from "./contexts/OrganizationContext";
 import { UserProvider, useUser } from "./contexts/UserContext";
 import PaymentPage from "./pages/PaymentPage";
 import { getOrganizationDetails } from "./api";
@@ -15,14 +15,19 @@ import { jwtDecode } from "jwt-decode";
 
 function ThemedApp() {
   const { user } = useUser();
+  const { orgaId } = useOrganization();
   const [clinicProviderName, setClinicProviderName] = useState(null);
 
   useEffect(() => {
-    getOrganizationDetails(localStorage.getItem('orgId')).then(res => {
-        setClinicProviderName(res.message?.organization?.name);
-        console.log('clinicProviderName', res.message?.organization?.name);
+    if (!orgaId) {
+      setClinicProviderName(null);
+      return;
+    }
+    getOrganizationDetails(orgaId).then(res => {
+      setClinicProviderName(res.message?.organization?.name);
+      console.log('clinicProviderName', res.message?.organization?.name);
     });
-  }, [localStorage.getItem('orgId')]);
+  }, [orgaId]);
 
   const userType = getUserType(user);
   const theme = getUserTheme(userType);
@@ -111,24 +116,97 @@ function App() {
 
   useEffect(() => {
     const handleMessage = (event) => {
+      // Optionally validate event.origin here against an allowlist
+      const data = event?.data;
+      if (!data) return;
 
-      if (event.data && event.data.type === 'idToken' && event.data.token) {
-        const idToken = event.data.token;
-
+      // Case 1: Explicit token message
+      if (data.type === 'idToken' && data.token) {
         try {
-          const decoded = jwtDecode(idToken);
-          console.log('Decoded JWT:', decoded['custom:rology_user'], decoded['custom:organizationId']);
-          setUserId(decoded['custom:rology_user']);
-          setOrganizationId(decoded['custom:organizationId']);
-          localStorage.setItem("orgId", decoded['custom:organizationId']); // keep consistency with ThemedApp
+          const decoded = jwtDecode(data.token);
+          setUserId(
+            decoded['custom:rology_user'] ||
+            decoded['sub'] ||
+            decoded['userId'] ||
+            decoded['user_id']
+          );
+          setOrganizationId(
+            decoded['custom:organizationId'] ||
+            decoded['organizationId'] ||
+            decoded['orgId'] ||
+            decoded['organization_id']
+          );
         } catch (error) {
-          console.error("Failed to decode JWT:", error);
+          console.error('Failed to decode JWT:', error);
         }
+        return;
+      }
+
+      // Case 2: Bare token without type
+      if (data.token && typeof data.token === 'string') {
+        try {
+          const decoded = jwtDecode(data.token);
+          setUserId(
+            decoded['custom:rology_user'] ||
+            decoded['sub'] ||
+            decoded['userId'] ||
+            decoded['user_id']
+          );
+          setOrganizationId(
+            decoded['custom:organizationId'] ||
+            decoded['organizationId'] ||
+            decoded['orgId'] ||
+            decoded['organization_id']
+          );
+        } catch (error) {
+          console.error('Failed to decode JWT:', error);
+        }
+        return;
+      }
+
+      // Case 3: Parent sends plain IDs or a different type
+      if (
+        (data.type === 'AUTH' || data.type === 'AUTH_INFO' || !data.type) &&
+        (data.userId || data.user_id) &&
+        (data.organizationId || data.orgId || data.organization_id)
+      ) {
+        setUserId(data.userId || data.user_id);
+        setOrganizationId(data.organizationId || data.orgId || data.organization_id);
+        return;
       }
     };
 
     window.addEventListener('message', handleMessage);
-    return () => window.removeEventListener('message', handleMessage);
+    
+    // Fallback: read from URL params if present
+    try {
+      const params = new URLSearchParams(window.location.search);
+      const urlUserId = params.get('userId');
+      const urlOrgId = params.get('organizationId');
+      if (urlUserId) {
+        setUserId(urlUserId);
+      }
+      if (urlOrgId) {
+        setOrganizationId(urlOrgId);
+      }
+    } catch (_) {}
+
+    // Initiate handshake with parent to request token
+    try {
+      const request = { type: 'REQUEST_ID_TOKEN' };
+      // Send immediately and after a short delay to cover race conditions
+      window.parent?.postMessage(request, '*');
+      const retryTimer = setTimeout(() => {
+        window.parent?.postMessage(request, '*');
+      }, 500);
+
+      return () => {
+        window.removeEventListener('message', handleMessage);
+        clearTimeout(retryTimer);
+      };
+    } catch (_) {
+      return () => window.removeEventListener('message', handleMessage);
+    }
   }, []);
 
   return (
