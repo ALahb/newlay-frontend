@@ -1,11 +1,13 @@
 import React, { useEffect, useState } from 'react';
 import { useParams } from 'react-router-dom';
 import { useClinicRequest } from '../contexts/ClinicRequestContext';
+import { useRefresh } from '../contexts/RefreshContext';
 import PreviewRequest from '../components/PreviewRequest';
 
 export default function PreviewRequestPage() {
     const { id } = useParams();
     const { getRequestById } = useClinicRequest();
+    const { refreshTrigger } = useRefresh();
 
     const [requestData, setRequestData] = useState(null);
     const [loading, setLoading] = useState(true);
@@ -24,7 +26,7 @@ export default function PreviewRequestPage() {
         };
 
         fetchData();
-    }, [id, getRequestById]);
+    }, [id, getRequestById, refreshTrigger]);
 
     if (loading) return <div>Loading...</div>;
     if (!requestData) return <div>Request not found.</div>;

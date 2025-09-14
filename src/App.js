@@ -8,11 +8,11 @@ import { ClinicRequestProvider } from "./contexts/ClinicRequestContext";
 import { OrganizationProvider, useOrganization } from "./contexts/OrganizationContext";
 import { UserProvider, useUser } from "./contexts/UserContext";
 import { AuthenticationProvider, useAuthentication } from "./contexts/AuthenticationContext";
+import { RefreshProvider } from "./contexts/RefreshContext";
 import PaymentPage from "./pages/PaymentPage";
 import { getOrganizationDetails } from "./api";
 import { getUserTheme, getUserType } from "./utils/userTheme";
 import BreadcrumbsNav from "./components/BreadcrumbsNav";
-import AuthDebugInfo from "./components/AuthDebugInfo";
 
 function ThemedApp() {
   const { user } = useUser();
@@ -82,8 +82,6 @@ function ThemedApp() {
           Clinic Management Dashboard
         </Typography>
 
-        <AuthDebugInfo />
-
         {clinicProviderName && (
           <Typography variant="h4" component="h2" sx={{ fontSize: '1.5rem', fontWeight: 'bold', color: 'primary.main', mb: 2 }} gutterBottom>
             Clinic Provider : { clinicProviderName }
@@ -150,11 +148,13 @@ function App() {
     userId ? (
       <UserProvider>
         <ClinicRequestProvider>
-          <Router>
-            <OrganizationProvider>
-              <ThemedApp />
-            </OrganizationProvider>
-          </Router>
+          <RefreshProvider>
+            <Router>
+              <OrganizationProvider>
+                <ThemedApp />
+              </OrganizationProvider>
+            </Router>
+          </RefreshProvider>
         </ClinicRequestProvider>
       </UserProvider>
     ) : (

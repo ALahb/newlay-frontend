@@ -1,9 +1,12 @@
 import React from "react";
-import { Breadcrumbs, Typography, Link as MuiLink } from "@mui/material";
+import { Breadcrumbs, Typography, Link as MuiLink, IconButton, Box, Tooltip } from "@mui/material";
 import { Link, useLocation, matchPath } from "react-router-dom";
+import { Refresh } from "@mui/icons-material";
+import { useRefresh } from "../contexts/RefreshContext";
 
 export default function BreadcrumbsNav() {
   const location = useLocation();
+  const { triggerRefresh } = useRefresh();
 
   const breadcrumbNameMap = {
     "/newlay": "Clinic Requests",
@@ -49,25 +52,43 @@ export default function BreadcrumbsNav() {
   const breadcrumbs = getBreadcrumbs(location.pathname);
 
   return (
-    <Breadcrumbs aria-label="breadcrumb" sx={{ mb: 2 }}>
-      {breadcrumbs.map((crumb, idx) => {
-        const isLast = idx === breadcrumbs.length - 1;
-        return isLast ? (
-          <Typography color="text.primary" key={crumb.to}>
-            {crumb.label}
-          </Typography>
-        ) : (
-          <MuiLink
-            component={Link}
-            underline="hover"
-            color="inherit"
-            to={crumb.to}
-            key={crumb.to}
-          >
-            {crumb.label}
-          </MuiLink>
-        );
-      })}
-    </Breadcrumbs>
+    <Box sx={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', mb: 2 }}>
+      <Breadcrumbs aria-label="breadcrumb">
+        {breadcrumbs.map((crumb, idx) => {
+          const isLast = idx === breadcrumbs.length - 1;
+          return isLast ? (
+            <Typography color="text.primary" key={crumb.to}>
+              {crumb.label}
+            </Typography>
+          ) : (
+            <MuiLink
+              component={Link}
+              underline="hover"
+              color="inherit"
+              to={crumb.to}
+              key={crumb.to}
+            >
+              {crumb.label}
+            </MuiLink>
+          );
+        })}
+      </Breadcrumbs>
+      
+      <Tooltip title="Refresh Data">
+        <IconButton 
+          onClick={triggerRefresh}
+          color="primary"
+          sx={{ 
+            ml: 2,
+            '&:hover': {
+              backgroundColor: 'primary.light',
+              color: 'white'
+            }
+          }}
+        >
+          <Refresh />
+        </IconButton>
+      </Tooltip>
+    </Box>
   );
 }

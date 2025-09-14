@@ -25,12 +25,14 @@ import { useClinicRequest } from '../contexts/ClinicRequestContext';
 import { getAllOrganizations, getAllModalityRequestTypes, getOrganizationDetails } from '../api';
 import { useUser } from '../contexts/UserContext';
 import { useAuthentication } from '../contexts/AuthenticationContext';
+import { useRefresh } from '../contexts/RefreshContext';
 
 export default function AddRequestForm() {
     const navigate = useNavigate();
     const { createRequest, sendPushNotificationToOrg } = useClinicRequest();
     const { organizationId, } = useAuthentication();
     const { user } = useUser();
+    const { refreshTrigger } = useRefresh();
 
     const [fullName, setFullName] = useState('');
     const [nationalityIdInRequest, setNationalityIdInRequest] = useState('');
@@ -119,7 +121,7 @@ export default function AddRequestForm() {
         };
 
         fetchData();
-    }, [organizationId]);
+    }, [organizationId, refreshTrigger]);
 
     useEffect(() => {
         if (organizationId) {
