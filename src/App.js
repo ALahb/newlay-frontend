@@ -26,7 +26,6 @@ function ThemedApp() {
     }
     getOrganizationDetails(orgaId).then(res => {
       setClinicProviderName(res.message?.organization?.name);
-      console.log('clinicProviderName', res.message?.organization?.name);
     });
   }, [orgaId]);
 

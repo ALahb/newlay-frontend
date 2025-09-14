@@ -18,7 +18,6 @@ export function OrganizationProvider({ children }) {
     const { organizationId: orgIdFromParams } = getUrlParams();
 
     if (orgIdFromParams && !orgaId) {
-      console.log('Auto-setting organization ID from URL params:', orgIdFromParams);
       setOrgId(orgIdFromParams);
     }
   }, [orgaId]);

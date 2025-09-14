@@ -101,7 +101,7 @@ export default function ClinicRequests() {
   const [accessionNumber, setAccessionNumber] = useState("");
   const [patientId, setPatientId] = useState("");
   const [accessionNumberLoading, setAccessionNumberLoading] = useState(false);
-
+  
   useEffect(() => {
     const handler = setTimeout(() => {
       const filtersWithIds = {

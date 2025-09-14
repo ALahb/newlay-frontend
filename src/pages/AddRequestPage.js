@@ -23,13 +23,13 @@ import {
 import { useNavigate } from 'react-router-dom';
 import { useClinicRequest } from '../contexts/ClinicRequestContext';
 import { getAllOrganizations, getAllModalityRequestTypes, getOrganizationDetails } from '../api';
-import { useOrganization } from '../contexts/OrganizationContext';
 import { useUser } from '../contexts/UserContext';
+import { useAuthentication } from '../contexts/AuthenticationContext';
 
 export default function AddRequestForm() {
     const navigate = useNavigate();
     const { createRequest, sendPushNotificationToOrg } = useClinicRequest();
-    const { organizationId } = useOrganization();
+    const { organizationId, } = useAuthentication();
     const { user } = useUser();
 
     const [fullName, setFullName] = useState('');
@@ -74,7 +74,7 @@ export default function AddRequestForm() {
                     getAllModalityRequestTypes()
                 ]);
 
-                const providerId = organizationId || orgaId;
+                const providerId = organizationId;
 
                 if (orgsResponse && orgsResponse.data) {
                     const allOrgs = orgsResponse.message.data.result;
@@ -122,15 +122,14 @@ export default function AddRequestForm() {
     }, [organizationId]);
 
     useEffect(() => {
-        if (organizationId || orgaId) {
-            setClinicProvider(organizationId || orgaId);
+        if (organizationId) {
+            setClinicProvider(organizationId);
         }
 
-        getOrganizationDetails(organizationId || orgaId).then(res => {
+        getOrganizationDetails(organizationId).then(res => {
             setClinicProviderName(res.message?.organization?.name);
-            console.log('clinicProviderName', res.message?.organization?.name);
         });
-    }, [organizationId, orgaId]);
+    }, [organizationId]);
 
     const handleSubmit = async (e) => {
         e.preventDefault();
@@ -161,7 +160,6 @@ export default function AddRequestForm() {
         
         try {
             const response = await createRequest(formData);
-            console.log('response', response);
             
             // Push notification is now handled automatically in the API
             setTimeout(() => {
