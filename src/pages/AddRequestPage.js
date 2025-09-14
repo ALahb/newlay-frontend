@@ -23,14 +23,16 @@ import {
 import { useNavigate } from 'react-router-dom';
 import { useClinicRequest } from '../contexts/ClinicRequestContext';
 import { getAllOrganizations, getAllModalityRequestTypes, getOrganizationDetails } from '../api';
-import { useOrganization } from '../contexts/OrganizationContext';
 import { useUser } from '../contexts/UserContext';
+import { useAuthentication } from '../contexts/AuthenticationContext';
+import { useRefresh } from '../contexts/RefreshContext';
 
 export default function AddRequestForm() {
     const navigate = useNavigate();
     const { createRequest, sendPushNotificationToOrg } = useClinicRequest();
-    const { organizationId } = useOrganization();
+    const { organizationId, } = useAuthentication();
     const { user } = useUser();
+    const { refreshTrigger } = useRefresh();
 
     const [fullName, setFullName] = useState('');
     const [nationalityIdInRequest, setNationalityIdInRequest] = useState('');
@@ -74,7 +76,7 @@ export default function AddRequestForm() {
                     getAllModalityRequestTypes()
                 ]);
 
-                const providerId = organizationId || localStorage.getItem('orgId');
+                const providerId = organizationId;
 
                 if (orgsResponse && orgsResponse.data) {
                     const allOrgs = orgsResponse.message.data.result;
@@ -119,18 +121,17 @@ export default function AddRequestForm() {
         };
 
         fetchData();
-    }, [organizationId]);
+    }, [organizationId, refreshTrigger]);
 
     useEffect(() => {
-        if (organizationId || localStorage.getItem('orgId')) {
-            setClinicProvider(organizationId || localStorage.getItem('orgId'));
+        if (organizationId) {
+            setClinicProvider(organizationId);
         }
 
-        getOrganizationDetails(organizationId || localStorage.getItem('orgId')).then(res => {
+        getOrganizationDetails(organizationId).then(res => {
             setClinicProviderName(res.message?.organization?.name);
-            console.log('clinicProviderName', res.message?.organization?.name);
         });
-    }, [organizationId, localStorage.getItem('orgId')]);
+    }, [organizationId]);
 
     const handleSubmit = async (e) => {
         e.preventDefault();
@@ -161,7 +162,6 @@ export default function AddRequestForm() {
         
         try {
             const response = await createRequest(formData);
-            console.log('response', response);
             
             // Push notification is now handled automatically in the API
             setTimeout(() => {

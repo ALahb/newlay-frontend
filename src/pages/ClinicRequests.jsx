@@ -40,6 +40,7 @@ import {
 import { useNavigate } from "react-router-dom";
 import { useClinicRequest } from "../contexts/ClinicRequestContext";
 import { useUser } from "../contexts/UserContext";
+import { useRefresh } from "../contexts/RefreshContext";
 import DashboardStats from "../components/DashboardStats";
 import { getUserType, getUserDisplayName } from "../utils/userTheme";
 import { getClinicRequest } from "../api";
@@ -48,6 +49,7 @@ import { useOrganization } from "../contexts/OrganizationContext";
 export default function ClinicRequests() {
   const theme = useTheme();
   const { user } = useUser();
+  const { refreshTrigger } = useRefresh();
   const userType = getUserType(user);
   const userDisplayName = getUserDisplayName(user);
   const { orgaId } = useOrganization();
@@ -101,7 +103,7 @@ export default function ClinicRequests() {
   const [accessionNumber, setAccessionNumber] = useState("");
   const [patientId, setPatientId] = useState("");
   const [accessionNumberLoading, setAccessionNumberLoading] = useState(false);
-
+  
   useEffect(() => {
     const handler = setTimeout(() => {
       const filtersWithIds = {
@@ -116,7 +118,7 @@ export default function ClinicRequests() {
     }, 500);
 
     return () => clearTimeout(handler);
-  }, [filters, page, getAllRequests, orgaId]);
+  }, [filters, page, getAllRequests, orgaId, refreshTrigger]);
 
   useEffect(() => {
     const fetchStats = async () => {
@@ -129,7 +131,7 @@ export default function ClinicRequests() {
     };
 
     fetchStats();
-  }, [getStats]);
+  }, [getStats, refreshTrigger]);
 
   const handleDelete = async () => {
     try {
@@ -322,8 +324,8 @@ export default function ClinicRequests() {
       setUploadUrl("");
       const response = await getAllRequests(
         {
-          clinic_provider_id: localStorage.getItem("orgId"),
-          clinic_receiver_id: localStorage.getItem("orgId"),
+          clinic_provider_id: orgaId,
+          clinic_receiver_id: orgaId,
         },
         page,
         10

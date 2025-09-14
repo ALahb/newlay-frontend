@@ -1,24 +1,23 @@
 import React, { createContext, useContext, useState, useEffect } from 'react';
-import { useSearchParams } from 'react-router-dom';
+import { useAuthentication } from './AuthenticationContext';
 import { getUrlParams } from '../utils/urlParams';
 
 const OrganizationContext = createContext();
 
-export function OrganizationProvider({ organizationId, children }) {
-  const [orgaId, setOrgId] = useState(organizationId || '');
+export function OrganizationProvider({ children }) {
+  const { organizationId: authOrgId } = useAuthentication();
+  const [orgaId, setOrgId] = useState(authOrgId || '');
 
   useEffect(() => {
-    if (organizationId) {
-      setOrgId(organizationId);
+    if (authOrgId) {
+      setOrgId(authOrgId);
     }
-    // eslint-disable-next-line
-  }, [organizationId]);
+  }, [authOrgId]);
 
   useEffect(() => {
     const { organizationId: orgIdFromParams } = getUrlParams();
 
     if (orgIdFromParams && !orgaId) {
-      console.log('Auto-setting organization ID from URL params:', orgIdFromParams);
       setOrgId(orgIdFromParams);
     }
   }, [orgaId]);
