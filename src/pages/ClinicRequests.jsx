@@ -322,8 +322,8 @@ export default function ClinicRequests() {
       setUploadUrl("");
       const response = await getAllRequests(
         {
-          clinic_provider_id: localStorage.getItem("orgId"),
-          clinic_receiver_id: localStorage.getItem("orgId"),
+          clinic_provider_id: orgaId,
+          clinic_receiver_id: orgaId,
         },
         page,
         10

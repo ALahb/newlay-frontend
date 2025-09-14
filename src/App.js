@@ -1,4 +1,4 @@
-import React, { useState, useEffect } from "react";
+import React from "react";
 import { Container, Typography, Box, ThemeProvider, CssBaseline } from "@mui/material";
 import { BrowserRouter as Router, Routes, Route } from "react-router-dom";
 import ClinicRequests from "./pages/ClinicRequests";
@@ -7,18 +7,19 @@ import EditRequestPage from "./pages/PreviewRequestPage";
 import { ClinicRequestProvider } from "./contexts/ClinicRequestContext";
 import { OrganizationProvider, useOrganization } from "./contexts/OrganizationContext";
 import { UserProvider, useUser } from "./contexts/UserContext";
+import { AuthenticationProvider, useAuthentication } from "./contexts/AuthenticationContext";
 import PaymentPage from "./pages/PaymentPage";
 import { getOrganizationDetails } from "./api";
 import { getUserTheme, getUserType } from "./utils/userTheme";
 import BreadcrumbsNav from "./components/BreadcrumbsNav";
-import { jwtDecode } from "jwt-decode";
+import AuthDebugInfo from "./components/AuthDebugInfo";
 
 function ThemedApp() {
   const { user } = useUser();
   const { orgaId } = useOrganization();
-  const [clinicProviderName, setClinicProviderName] = useState(null);
+  const [clinicProviderName, setClinicProviderName] = React.useState(null);
 
-  useEffect(() => {
+  React.useEffect(() => {
     if (!orgaId) {
       setClinicProviderName(null);
       return;
@@ -82,6 +83,8 @@ function ThemedApp() {
           Clinic Management Dashboard
         </Typography>
 
+        <AuthDebugInfo />
+
         {clinicProviderName && (
           <Typography variant="h4" component="h2" sx={{ fontSize: '1.5rem', fontWeight: 'bold', color: 'primary.main', mb: 2 }} gutterBottom>
             Clinic Provider : { clinicProviderName }
@@ -111,117 +114,58 @@ function ThemedApp() {
 }
 
 function App() {
-  const [userId, setUserId] = useState(null);
-  const [organizationId, setOrganizationId] = useState(null);
+  const { userId, organizationId, loading, error } = useAuthentication();
 
-  useEffect(() => {
-    const handleMessage = (event) => {
-      // Optionally validate event.origin here against an allowlist
-      const data = event?.data;
-      if (!data) return;
+  if (loading) {
+    return (
+      <div style={{ 
+        display: 'flex', 
+        justifyContent: 'center', 
+        alignItems: 'center', 
+        height: '100vh',
+        flexDirection: 'column'
+      }}>
+        <h2>Loading...</h2>
+        <p>Initializing authentication...</p>
+      </div>
+    );
+  }
 
-      // Case 1: Explicit token message
-      if (data.type === 'idToken' && data.token) {
-        try {
-          const decoded = jwtDecode(data.token);
-          setUserId(
-            decoded['custom:rology_user'] ||
-            decoded['sub'] ||
-            decoded['userId'] ||
-            decoded['user_id']
-          );
-          setOrganizationId(
-            decoded['custom:organizationId'] ||
-            decoded['organizationId'] ||
-            decoded['orgId'] ||
-            decoded['organization_id']
-          );
-        } catch (error) {
-          console.error('Failed to decode JWT:', error);
-        }
-        return;
-      }
-
-      // Case 2: Bare token without type
-      if (data.token && typeof data.token === 'string') {
-        try {
-          const decoded = jwtDecode(data.token);
-          setUserId(
-            decoded['custom:rology_user'] ||
-            decoded['sub'] ||
-            decoded['userId'] ||
-            decoded['user_id']
-          );
-          setOrganizationId(
-            decoded['custom:organizationId'] ||
-            decoded['organizationId'] ||
-            decoded['orgId'] ||
-            decoded['organization_id']
-          );
-        } catch (error) {
-          console.error('Failed to decode JWT:', error);
-        }
-        return;
-      }
-
-      // Case 3: Parent sends plain IDs or a different type
-      if (
-        (data.type === 'AUTH' || data.type === 'AUTH_INFO' || !data.type) &&
-        (data.userId || data.user_id) &&
-        (data.organizationId || data.orgId || data.organization_id)
-      ) {
-        setUserId(data.userId || data.user_id);
-        setOrganizationId(data.organizationId || data.orgId || data.organization_id);
-        return;
-      }
-    };
-
-    window.addEventListener('message', handleMessage);
-    
-    // Fallback: read from URL params if present
-    try {
-      const params = new URLSearchParams(window.location.search);
-      const urlUserId = params.get('userId');
-      const urlOrgId = params.get('organizationId');
-      if (urlUserId) {
-        setUserId(urlUserId);
-      }
-      if (urlOrgId) {
-        setOrganizationId(urlOrgId);
-      }
-    } catch (_) {}
-
-    // Initiate handshake with parent to request token
-    try {
-      const request = { type: 'REQUEST_ID_TOKEN' };
-      // Send immediately and after a short delay to cover race conditions
-      window.parent?.postMessage(request, '*');
-      const retryTimer = setTimeout(() => {
-        window.parent?.postMessage(request, '*');
-      }, 500);
-
-      return () => {
-        window.removeEventListener('message', handleMessage);
-        clearTimeout(retryTimer);
-      };
-    } catch (_) {
-      return () => window.removeEventListener('message', handleMessage);
-    }
-  }, []);
+  if (error) {
+    return (
+      <div style={{ 
+        display: 'flex', 
+        justifyContent: 'center', 
+        alignItems: 'center', 
+        height: '100vh',
+        flexDirection: 'column'
+      }}>
+        <h2>Authentication Error</h2>
+        <p>{error}</p>
+        <p>Please ensure you are logged in through the main application.</p>
+      </div>
+    );
+  }
 
   return (
     userId ? (
-      <UserProvider userId={userId}>
+      <UserProvider>
         <ClinicRequestProvider>
           <Router>
-            <OrganizationProvider organizationId={organizationId}>
+            <OrganizationProvider>
               <ThemedApp />
             </OrganizationProvider>
           </Router>
         </ClinicRequestProvider>
       </UserProvider>
     ) : (
-      <div>
+      <div style={{ 
+        display: 'flex', 
+        justifyContent: 'center', 
+        alignItems: 'center', 
+        height: '100vh',
+        flexDirection: 'column'
+      }}>
         <h2>Waiting for authentication...</h2>
         <p>Please ensure you are logged in through the main application.</p>
       </div>
@@ -229,4 +173,12 @@ function App() {
   );
 }
 
-export default App;
+function AppWithAuth() {
+  return (
+    <AuthenticationProvider>
+      <App />
+    </AuthenticationProvider>
+  );
+}
+
+export default AppWithAuth;

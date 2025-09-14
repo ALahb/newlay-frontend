@@ -74,7 +74,7 @@ export default function AddRequestForm() {
                     getAllModalityRequestTypes()
                 ]);
 
-                const providerId = organizationId || localStorage.getItem('orgId');
+                const providerId = organizationId || orgaId;
 
                 if (orgsResponse && orgsResponse.data) {
                     const allOrgs = orgsResponse.message.data.result;
@@ -122,15 +122,15 @@ export default function AddRequestForm() {
     }, [organizationId]);
 
     useEffect(() => {
-        if (organizationId || localStorage.getItem('orgId')) {
-            setClinicProvider(organizationId || localStorage.getItem('orgId'));
+        if (organizationId || orgaId) {
+            setClinicProvider(organizationId || orgaId);
         }
 
-        getOrganizationDetails(organizationId || localStorage.getItem('orgId')).then(res => {
+        getOrganizationDetails(organizationId || orgaId).then(res => {
             setClinicProviderName(res.message?.organization?.name);
             console.log('clinicProviderName', res.message?.organization?.name);
         });
-    }, [organizationId, localStorage.getItem('orgId')]);
+    }, [organizationId, orgaId]);
 
     const handleSubmit = async (e) => {
         e.preventDefault();

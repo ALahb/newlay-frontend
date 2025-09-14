@@ -12,6 +12,8 @@ import {
 } from '@mui/material';
 import { useSearchParams } from 'react-router-dom';
 import { getUserDetails, getOrganizationDetails } from '../api';
+import { useAuthentication } from '../contexts/AuthenticationContext';
+import { useOrganization } from '../contexts/OrganizationContext';
 
 const UserOrganizationInfo = () => {
     const [userData, setUserData] = useState(null);
@@ -19,25 +21,29 @@ const UserOrganizationInfo = () => {
     const [loading, setLoading] = useState(true);
     const [error, setError] = useState(null);
     const [searchParams] = useSearchParams();
-
-    // Get IDs from URL parameters with fallback to default values
-    const userId = searchParams.get('userId') || '676301e1818b3e9f34f20fc2';
-    const organizationId = searchParams.get('organizationId') || '5a4db4c32d7f2fc398abd870';
+    
+    // Get IDs from context with fallback to URL parameters and default values
+    const { userId: authUserId, user: authUser } = useAuthentication();
+    const { orgaId } = useOrganization();
+    const userId = authUserId || searchParams.get('userId') || '676301e1818b3e9f34f20fc2';
+    const organizationId = orgaId || searchParams.get('organizationId') || '5a4db4c32d7f2fc398abd870';
 
     useEffect(() => {
-        localStorage.setItem('userId', userId);
         const fetchData = async () => {
             try {
                 setLoading(true);
                 setError(null);
 
-                // Fetch both user and organization data in parallel
-                const [userResponse, organizationResponse] = await Promise.all([
-                    getUserDetails(userId),
-                    getOrganizationDetails(organizationId)
-                ]);
+                // Use auth user data if available, otherwise fetch from API
+                if (authUser) {
+                    setUserData(authUser);
+                } else {
+                    const userResponse = await getUserDetails(userId);
+                    setUserData(userResponse);
+                }
 
-                setUserData(userResponse);
+                // Always fetch organization data
+                const organizationResponse = await getOrganizationDetails(organizationId);
                 setOrganizationData(organizationResponse);
             } catch (err) {
                 setError('Failed to fetch data. Please check your backend server.');
@@ -48,7 +54,7 @@ const UserOrganizationInfo = () => {
         };
 
         fetchData();
-    }, [userId, organizationId]); // Re-fetch when IDs change
+    }, [userId, organizationId, authUser]); // Re-fetch when IDs change
 
     if (loading) {
         return (
